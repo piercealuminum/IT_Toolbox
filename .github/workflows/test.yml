@@ -1,0 +1,50 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    name: Windows PowerShell ${{ matrix.shell == 'powershell' && '5.1' || '7' }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [powershell, pwsh]
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pester 5
+        run: |
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          Install-Module Pester -MinimumVersion 5.5 -Scope CurrentUser -Force -SkipPublisherCheck
+
+      - name: Run tests (includes running every command against the runner)
+        run: ./build/Invoke-Tests.ps1
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.shell }}
+          path: TestResults-*.xml
+
+  linux:
+    name: Linux PowerShell 7 (logic and compatibility)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pester 5
+        run: Install-Module Pester -MinimumVersion 5.5 -Scope CurrentUser -Force
+
+      - name: Run tests
+        run: ./build/Invoke-Tests.ps1

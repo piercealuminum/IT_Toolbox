@@ -1,0 +1,8 @@
+# PowerShell files use Windows line endings on checkout, so code signatures and
+# Windows editors see the same bytes on every tech's PC.
+* text=auto
+*.ps1    text eol=crlf
+*.psm1   text eol=crlf
+*.psd1   text eol=crlf
+*.ps1xml text eol=crlf
+*.txt    text eol=crlf
