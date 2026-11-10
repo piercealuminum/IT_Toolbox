@@ -1,0 +1,11 @@
+@{
+    # JEA role capability for the ITToolkit endpoint that ITHub calls. Whoever this role is
+    # assigned to (the ITHub service account) can run these two functions and nothing else.
+    # Install-ITHubEndpoint.ps1 assigns it. JEA finds this file because it sits in the
+    # RoleCapabilities folder of a module on the PowerShell module path.
+    GUID             = 'f9cc2028-b345-4fa2-b089-c576244ff860'
+    Author           = 'IT Department'
+    Description      = 'ITHub Tools: run ITToolkit through Invoke-ITHubTool and read the tool catalog. Nothing else.'
+    ModulesToImport  = 'ITToolkit'
+    VisibleFunctions = 'Invoke-ITHubTool', 'Get-ITHubToolCatalog'
+}

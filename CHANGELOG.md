@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.0
+
+- ITHub web interface, phase 1 (read-only):
+  - `Invoke-ITHubTool` checks a JSON request against the tool list and each parameter's rule,
+    runs the tool and returns one JSON envelope: results in camelCase with their type,
+    a summary for checks, warnings, errors and a ticket note.
+  - `Get-ITHubToolCatalog` lists the 10 phase 1 tools with their parameters and rules, for
+    ITHub's forms.
+  - `RoleCapabilities/ITHubTools.psrc`: the JEA role that exposes only those two functions.
+  - `ITHub/Install-ITHubEndpoint.ps1` registers the endpoint (gMSA, transcripts) and installs
+    the client script at a fixed path. `ITHub/Invoke-ITHubRequest.ps1` is that client script:
+    a request on standard input, the envelope on standard output, and always valid JSON.
+  - App-only Microsoft Graph sign-in for user checks run through ITHub (`ITHub` settings).
+  - Sample envelopes in `docs/ithub/samples`, checked against the code by the tests.
+- `ConvertTo-ITTicketNote -CollectedBy` names the person in the note, since ITHub's runs
+  execute as a service account.
+- CI registers a real JEA endpoint on Windows PowerShell 5.1 and calls it through the client
+  script.
+
 ## 1.1.0
 
 - `Get-ITUserStatus`: Active Directory account check (enabled, locked out, bad passwords,

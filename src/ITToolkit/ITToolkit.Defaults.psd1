@@ -49,6 +49,16 @@
         PasswordExpiryWarnDays = 7
         AccountExpiryWarnDays  = 14
     }
+    ITHub        = @{
+        # App-only Microsoft Graph access for the Entra ID part of user-status when it runs
+        # through ITHub. The certificate must be in Cert:\LocalMachine\My on the ITHub server,
+        # with its private key readable by the endpoint's gMSA. Empty = Entra ID not checked.
+        GraphTenantId              = ''
+        GraphClientId              = ''
+        GraphCertificateThumbprint = ''
+        # Most result rows returned to ITHub per run.
+        MaxResults                 = 2000
+    }
     Passphrase   = @{
         WordCount = 4
         Separator = '-'

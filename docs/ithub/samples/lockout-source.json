@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "toolkitVersion": "1.2.0",
+  "tool": "lockout-source",
+  "parameters": {
+    "identity": "jlee",
+    "hours": 24
+  },
+  "requestedBy": "Jordan Lee",
+  "startedAt": "2026-11-10T14:05:11Z",
+  "finishedAt": "2026-11-10T14:05:19Z",
+  "status": "completed",
+  "results": [
+    {
+      "type": "ITToolkit.Lockout",
+      "timeCreated": "2026-11-10T13:41:07Z",
+      "userName": "jlee",
+      "callerComputer": "PC0177",
+      "domainController": "DC01.corp.example.com",
+      "note": null
+    },
+    {
+      "type": "ITToolkit.Lockout",
+      "timeCreated": "2026-11-10T12:10:44Z",
+      "userName": "jlee",
+      "callerComputer": "",
+      "domainController": "DC01.corp.example.com",
+      "note": "No caller computer recorded. Usually a phone, VPN, Outlook on the web or another network service with an old password"
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "ticketNote": "== Account lockout source ==\nCollected 2026-11-10 14:05 by Jordan Lee with ITToolkit\n\nTime             UserName CallerComputer DomainController      Note\n----             -------- -------------- ----------------      ----\n2026-11-10 13:41 jlee     PC0177         DC01.corp.example.com \n2026-11-10 12:10 jlee                    DC01.corp.example.com No caller computer recorded. Usually a phone, VPN, Outlook on the web or another network service with an old password"
+}

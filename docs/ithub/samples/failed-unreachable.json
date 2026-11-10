@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "toolkitVersion": "1.2.0",
+  "tool": "local-admins",
+  "parameters": {
+    "computerName": "PC0999"
+  },
+  "requestedBy": "Jordan Lee",
+  "startedAt": "2026-11-10T14:05:11Z",
+  "finishedAt": "2026-11-10T14:05:19Z",
+  "status": "failed",
+  "results": [],
+  "warnings": [],
+  "errors": [
+    "PC0999: Could not connect with PowerShell remoting. Check that the computer is on, WinRM is enabled (Enable-PSRemoting) and you are an administrator on it. Details: WinRM cannot complete the operation. Verify that the specified computer name is valid."
+  ],
+  "ticketNote": null
+}

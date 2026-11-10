@@ -23,6 +23,10 @@ function ConvertTo-ITTicketNote {
     .PARAMETER Width
     Line width for tables. Default 160.
 
+    .PARAMETER CollectedBy
+    Name to show as the person who collected the results. Defaults to the signed-in account.
+    ITHub passes the tech's name, because its runs execute as a service account.
+
     .EXAMPLE
     Get-ITDeviceHealth -ComputerName PC0142 | ConvertTo-ITTicketNote -Clipboard
 
@@ -44,7 +48,9 @@ function ConvertTo-ITTicketNote {
         [switch]$Clipboard,
 
         [ValidateRange(80, 1000)]
-        [int]$Width = 160
+        [int]$Width = 160,
+
+        [string]$CollectedBy
     )
 
     begin {
@@ -87,7 +93,7 @@ function ConvertTo-ITTicketNote {
             else { $Title = 'Results' }
         }
 
-        $who = '{0}\{1}' -f [Environment]::UserDomainName, [Environment]::UserName
+        $who = if ($CollectedBy) { $CollectedBy } else { '{0}\{1}' -f [Environment]::UserDomainName, [Environment]::UserName }
         $lines = New-Object System.Collections.Generic.List[string]
         $lines.Add("== $Title ==")
         $lines.Add(('Collected {0:yyyy-MM-dd HH:mm} by {1} with ITToolkit' -f (Get-Date), $who))

@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "toolkitVersion": "1.2.0",
+  "tool": "user-status",
+  "parameters": {
+    "identity": "jlee"
+  },
+  "requestedBy": "Jordan Lee",
+  "startedAt": "2026-11-10T14:05:11Z",
+  "finishedAt": "2026-11-10T14:05:19Z",
+  "status": "completed",
+  "results": [
+    {
+      "type": "ITToolkit.UserCheck",
+      "userName": "jlee",
+      "category": "Active Directory",
+      "check": "Account",
+      "status": "Info",
+      "detail": "Jordan Lee (jlee, jordan.lee@example.com); Sales Manager, Sales; in corp.example.com/Users/Sales; manager Kim, Pat"
+    },
+    {
+      "type": "ITToolkit.UserCheck",
+      "userName": "jlee",
+      "category": "Active Directory",
+      "check": "Enabled",
+      "status": "OK",
+      "detail": "Enabled"
+    },
+    {
+      "type": "ITToolkit.UserCheck",
+      "userName": "jlee",
+      "category": "Active Directory",
+      "check": "Lockout",
+      "status": "Fail",
+      "detail": "Locked out since 2026-11-10 08:41 (5 bad password(s), last 2026-11-10 08:41) (read from DC01.corp.example.com). Find the cause with Get-ITLockoutSource jlee"
+    },
+    {
+      "type": "ITToolkit.UserCheck",
+      "userName": "jlee",
+      "category": "Active Directory",
+      "check": "Password",
+      "status": "OK",
+      "detail": "Last set 2026-10-21 09:12; expires 2027-01-19 09:12 (in 69 days)"
+    },
+    {
+      "type": "ITToolkit.UserCheck",
+      "userName": "jlee",
+      "category": "Active Directory",
+      "check": "Last logon",
+      "status": "Info",
+      "detail": "Around 2026-11-07 (Active Directory updates this only every 9-14 days)"
+    },
+    {
+      "type": "ITToolkit.UserCheck",
+      "userName": "jlee",
+      "category": "Entra ID",
+      "check": "Sync",
+      "status": "Info",
+      "detail": "Synced from Active Directory, last synced 2026-11-10 08:30"
+    },
+    {
+      "type": "ITToolkit.UserCheck",
+      "userName": "jlee",
+      "category": "Entra ID",
+      "check": "Sign-in",
+      "status": "OK",
+      "detail": "Allowed to sign in to Microsoft 365; last sign-in 2026-11-10 08:02"
+    },
+    {
+      "type": "ITToolkit.UserCheck",
+      "userName": "jlee",
+      "category": "Entra ID",
+      "check": "Licenses",
+      "status": "Info",
+      "detail": "Microsoft 365 Business Premium"
+    },
+    {
+      "type": "ITToolkit.UserCheck",
+      "userName": "jlee",
+      "category": "Entra ID",
+      "check": "MFA methods",
+      "status": "OK",
+      "detail": "Authenticator app (iPhone 15), Phone (mobile, ending 4512)"
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "ticketNote": "== User account check ==\nCollected 2026-11-10 14:05 by Jordan Lee with ITToolkit\n\njlee: 1 fail, 0 warn, 4 OK, 4 info\n\nNeeds attention:\n  [FAIL] Lockout - Locked out since 2026-11-10 08:41 (5 bad password(s), last 2026-11-10 08:41) (read from DC01.corp.example.com). Find the cause with Get-ITLockoutSource jlee\n\nAll checks:\nCheck       Status Detail\n-----       ------ ------\nAccount     Info   Jordan Lee (jlee, jordan.lee@example.com); Sales Manager, Sales; in corp.example.com/Users/Sales; manager Kim, Pat\nEnabled     OK     Enabled\nLockout     Fail   Locked out since 2026-11-10 08:41 (5 bad password(s), last 2026-11-10 08:41) (read from DC01.corp.example.com). Find the cause with Get-ITLockoutSource jlee\nPassword    OK     Last set 2026-10-21 09:12; expires 2027-01-19 09:12 (in 69 days)\nLast logon  Info   Around 2026-11-07 (Active Directory updates this only every 9-14 days)\nSync        Info   Synced from Active Directory, last synced 2026-11-10 08:30\nSign-in     OK     Allowed to sign in to Microsoft 365; last sign-in 2026-11-10 08:02\nLicenses    Info   Microsoft 365 Business Premium\nMFA methods OK     Authenticator app (iPhone 15), Phone (mobile, ending 4512)",
+  "summary": {
+    "fail": 1,
+    "warn": 0,
+    "ok": 4,
+    "info": 4
+  }
+}

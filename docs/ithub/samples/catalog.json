@@ -1,0 +1,266 @@
+{
+  "schemaVersion": 1,
+  "toolkitVersion": "1.2.0",
+  "tools": [
+    {
+      "id": "device-health",
+      "title": "Device health",
+      "description": "PesterMock_ITToolkit_Get-ITDeviceHealth_622c85f8-2bab-49df-b5f9-11e19b1ebd81 [[-ComputerName] <string[]>] [-Credential <pscredential>] [-Summary] [<CommonParameters>]",
+      "command": "Get-ITDeviceHealth",
+      "permission": "tools.run",
+      "target": "computer",
+      "phase": 1,
+      "resultType": "ITToolkit.CheckResult",
+      "parameters": [
+        {
+          "name": "computerName",
+          "type": "string",
+          "required": true,
+          "description": "Computer to check",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]{0,252}$"
+        }
+      ]
+    },
+    {
+      "id": "pending-reboot",
+      "title": "Pending restart",
+      "description": "Shows whether a computer needs a restart and why, with its uptime.",
+      "command": "Get-ITPendingReboot",
+      "permission": "tools.run",
+      "target": "computer",
+      "phase": 1,
+      "resultType": "ITToolkit.PendingReboot",
+      "parameters": [
+        {
+          "name": "computerName",
+          "type": "string",
+          "required": true,
+          "description": "Computer to check",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]{0,252}$"
+        }
+      ]
+    },
+    {
+      "id": "network-test",
+      "title": "Network test",
+      "description": "Network triage from the computer's point of view: adapters, gateway, DNS, Microsoft 365 reachability, proxy and time sync.",
+      "command": "Test-ITNetwork",
+      "permission": "tools.run",
+      "target": "computer",
+      "phase": 1,
+      "resultType": "ITToolkit.CheckResult",
+      "parameters": [
+        {
+          "name": "computerName",
+          "type": "string",
+          "required": true,
+          "description": "Computer to test from",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]{0,252}$"
+        },
+        {
+          "name": "tcpTargets",
+          "type": "string[]",
+          "required": false,
+          "description": "Extra host:port pairs to connect to, such as fs01:445",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]{0,252}:[0-9]{1,5}$",
+          "maxItems": 10
+        }
+      ]
+    },
+    {
+      "id": "port-test",
+      "title": "Port test",
+      "description": "Fast TCP port test against one or more hosts, from this computer or from another one.",
+      "command": "Test-ITPort",
+      "permission": "tools.run",
+      "target": "computer",
+      "phase": 1,
+      "resultType": "ITToolkit.PortTest",
+      "parameters": [
+        {
+          "name": "host",
+          "type": "string",
+          "required": true,
+          "description": "Server or device to connect to",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]{0,252}$"
+        },
+        {
+          "name": "ports",
+          "type": "integer[]",
+          "required": false,
+          "description": "TCP ports to test (give ports or preset)",
+          "minimum": 1,
+          "maximum": 65535,
+          "maxItems": 20
+        },
+        {
+          "name": "preset",
+          "type": "enum",
+          "required": false,
+          "description": "A named set of ports (give ports or preset)",
+          "values": [
+            "DomainController",
+            "Email",
+            "Printer",
+            "RDP",
+            "SMB",
+            "SQL",
+            "SSH",
+            "Web",
+            "WinRM"
+          ]
+        },
+        {
+          "name": "fromComputer",
+          "type": "string",
+          "required": false,
+          "description": "Test from this computer instead of the ITHub server",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]{0,252}$"
+        }
+      ],
+      "oneOf": [
+        "ports",
+        "preset"
+      ]
+    },
+    {
+      "id": "signed-in-users",
+      "title": "Signed-in users",
+      "description": "Shows who is signed in to a computer (console and Remote Desktop), including disconnected sessions and idle time.",
+      "command": "Get-ITLoggedOnUser",
+      "permission": "tools.run",
+      "target": "computer",
+      "phase": 1,
+      "resultType": "ITToolkit.Session",
+      "parameters": [
+        {
+          "name": "computerName",
+          "type": "string",
+          "required": true,
+          "description": "Computer to check",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]{0,252}$"
+        }
+      ]
+    },
+    {
+      "id": "installed-software",
+      "title": "Installed software",
+      "description": "Lists installed programs (as in Settings > Apps), including per-user installs, with version and uninstall command.",
+      "command": "Get-ITInstalledSoftware",
+      "permission": "tools.run",
+      "target": "computer",
+      "phase": 1,
+      "resultType": "ITToolkit.Software",
+      "parameters": [
+        {
+          "name": "computerName",
+          "type": "string",
+          "required": true,
+          "description": "Computer to check",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]{0,252}$"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "description": "Program name to look for; * is a wildcard",
+          "pattern": "^[A-Za-z0-9 .*_()+&,-]{1,100}$"
+        }
+      ]
+    },
+    {
+      "id": "event-summary",
+      "title": "Event log summary",
+      "description": "Summarizes recent errors and notable events (crashes, unexpected restarts, disk and hardware errors) from the System and Application logs.",
+      "command": "Get-ITEventSummary",
+      "permission": "tools.run",
+      "target": "computer",
+      "phase": 1,
+      "resultType": "ITToolkit.EventGroup",
+      "parameters": [
+        {
+          "name": "computerName",
+          "type": "string",
+          "required": true,
+          "description": "Computer to check",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]{0,252}$"
+        },
+        {
+          "name": "hours",
+          "type": "integer",
+          "required": false,
+          "description": "How many hours back to look",
+          "default": 24,
+          "minimum": 1,
+          "maximum": 720
+        }
+      ]
+    },
+    {
+      "id": "local-admins",
+      "title": "Local administrators",
+      "description": "Lists the members of the local Administrators group and where each comes from (Local, Domain, Entra ID).",
+      "command": "Get-ITLocalAdmin",
+      "permission": "tools.run",
+      "target": "computer",
+      "phase": 1,
+      "resultType": "ITToolkit.LocalAdmin",
+      "parameters": [
+        {
+          "name": "computerName",
+          "type": "string",
+          "required": true,
+          "description": "Computer to check",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]{0,252}$"
+        }
+      ]
+    },
+    {
+      "id": "user-status",
+      "title": "User account status",
+      "description": "PesterMock_ITToolkit_Get-ITUserStatus_6eacb40e-964c-4b0c-b2b6-ecc29401d8cc [-Identity] <string[]> [-Server <string>] [-SkipEntra] [<CommonParameters>]",
+      "command": "Get-ITUserStatus",
+      "permission": "tools.run",
+      "target": "user",
+      "phase": 1,
+      "resultType": "ITToolkit.UserCheck",
+      "parameters": [
+        {
+          "name": "identity",
+          "type": "string",
+          "required": true,
+          "description": "Account name, UPN or email address",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._@-]{0,255}$"
+        }
+      ]
+    },
+    {
+      "id": "lockout-source",
+      "title": "Lockout source",
+      "description": "PesterMock_ITToolkit_Get-ITLockoutSource_460b2297-c505-49b3-a922-546d1c3fe791 [[-Identity] <string>] [-Hours <int>] [-Server <string>] [-Credential <pscredential>] [<CommonParameters>]",
+      "command": "Get-ITLockoutSource",
+      "permission": "tools.run",
+      "target": "user",
+      "phase": 1,
+      "resultType": "ITToolkit.Lockout",
+      "parameters": [
+        {
+          "name": "identity",
+          "type": "string",
+          "required": false,
+          "description": "Account name or UPN; leave empty for every lockout",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._@-]{0,255}$"
+        },
+        {
+          "name": "hours",
+          "type": "integer",
+          "required": false,
+          "description": "How many hours back to look",
+          "default": 24,
+          "minimum": 1,
+          "maximum": 720
+        }
+      ]
+    }
+  ]
+}

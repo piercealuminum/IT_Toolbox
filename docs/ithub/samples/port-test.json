@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "toolkitVersion": "1.2.0",
+  "tool": "port-test",
+  "parameters": {
+    "host": "127.0.0.1",
+    "ports": [
+      8443,
+      1
+    ]
+  },
+  "requestedBy": "Jordan Lee",
+  "startedAt": "2026-11-10T14:05:11Z",
+  "finishedAt": "2026-11-10T14:05:19Z",
+  "status": "completed",
+  "results": [
+    {
+      "type": "ITToolkit.PortTest",
+      "source": "ITHUB01",
+      "computerName": "127.0.0.1",
+      "port": 8443,
+      "service": null,
+      "open": true,
+      "latencyMs": 2,
+      "detail": "Connected to 127.0.0.1"
+    },
+    {
+      "type": "ITToolkit.PortTest",
+      "source": "ITHUB01",
+      "computerName": "127.0.0.1",
+      "port": 1,
+      "service": null,
+      "open": false,
+      "latencyMs": null,
+      "detail": "Refused: the host is up but nothing is listening on this port"
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "ticketNote": "== Port test ==\nCollected 2026-11-10 14:05 by Jordan Lee with ITToolkit\n\nFrom ComputerName  Port Service Open  Ms Detail\n---- ------------  ---- ------- ----  -- ------\nvm   127.0.0.1    8443         True   2 Connected to 127.0.0.1\nvm   127.0.0.1        1         False    Refused: the host is up but nothing is listening on this port"
+}

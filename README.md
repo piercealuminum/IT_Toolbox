@@ -120,6 +120,44 @@ Things to know in a hybrid domain:
 - `Reset-ITUserPassword` output shows the passphrase once. `ConvertTo-ITTicketNote` leaves it
   out, so it never ends up in ITHub.
 
+## ITHub web interface
+
+ITHub's Tools page runs ITToolkit through a locked-down PowerShell endpoint (JEA) on the
+ITHub server. ITHub can call only `Invoke-ITHubTool` and `Get-ITHubToolCatalog`. The
+endpoint runs as a group managed service account (gMSA) and records a transcript of every
+call. The full design is in the *ITHub Tools* spec. The JSON that ITHub reads is shown in
+[`docs/ithub/samples`](docs/ithub/samples).
+
+Setting it up on the ITHub server (once):
+
+1. **Create the gMSA** (needs the domain's KDS root key) and allow the ITHub server to use it:
+   ```powershell
+   New-ADServiceAccount -Name svc-ittoolkit -DNSHostName svc-ittoolkit.corp.example.com -PrincipalsAllowedToRetrieveManagedPassword 'ITHUB01$'
+   Install-ADServiceAccount svc-ittoolkit      # on the ITHub server
+   ```
+2. **Give the gMSA its rights:** local admin on workstations by GPO, plus the domain's
+   *Event Log Readers* and *Remote Management Users* groups for lockout lookups. Never
+   Domain Admins. Deny it interactive and Remote Desktop sign-in by GPO.
+3. **Install ITToolkit for all users** on the ITHub server: `.\Install-ITToolkit.ps1`.
+4. **Register the endpoint** from an elevated Windows PowerShell 5.1 window:
+   ```powershell
+   & "$env:ProgramFiles\WindowsPowerShell\Modules\ITToolkit\1.2.0\ITHub\Install-ITHubEndpoint.ps1" -ITHubAccount CORP\svc-ithub -GmsaAccount 'CORP\svc-ittoolkit$'
+   ```
+   This also copies the client script to `C:\Program Files\ITToolkit\Invoke-ITHubRequest.ps1`.
+5. **Point ITHub at it:** set `TOOLS_RUNNER_PATH` in ITHub's `.env` to that path.
+6. **Optional, for the Entra ID part of user checks:** register an Entra app with the
+   Microsoft Graph application permissions `User.Read.All`, `UserAuthenticationMethod.Read.All`
+   and `AuditLog.Read.All`. Put its certificate in the server's `Cert:\LocalMachine\My`,
+   give the gMSA read access to the private key, and set `GraphTenantId`, `GraphClientId`
+   and `GraphCertificateThumbprint` under `ITHub` in `C:\ProgramData\ITToolkit\Settings.psd1`.
+
+After each ITToolkit update, run step 3 and then step 4 again.
+
+To check it works, sign in as the ITHub service account and run:
+```powershell
+'{"action":"catalog"}' | powershell.exe -NoProfile -File "C:\Program Files\ITToolkit\Invoke-ITHubRequest.ps1"
+```
+
 ## Installing for the team
 
 1. Put a copy of this repository on the IT share, for example `\\fs01\it$\ITToolkit`.
@@ -222,6 +260,10 @@ src/ITToolkit/
   Private/Parsers.ps1       reads dsregcmd, quser, w32tm and netsh output
   Private/Directory.ps1     Active Directory and Microsoft Graph lookups (user commands)
   Private/UserConverters.ps1  turns AD and Entra ID data into user results
+  Private/ITHub.ps1         the ITHub contract: tool list, parameter rules, JSON conversion
+  RoleCapabilities/         the JEA role ITHub's account gets (two functions)
+  ITHub/                    endpoint installer and the client script ITHub runs
+docs/ithub/samples/         JSON envelopes and catalog, as ITHub receives them
   Data/Words.txt            word list for New-ITPassphrase
 tests/                      Pester 5 tests
 build/                      test runner, 5.1 compatibility check, signing

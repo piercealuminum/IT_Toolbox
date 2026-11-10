@@ -24,8 +24,20 @@ jobs:
           [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           Install-Module Pester -MinimumVersion 5.5 -Scope CurrentUser -Force -SkipPublisherCheck
 
+      # Windows PowerShell 5.1 job only: install the module for all users and register a real
+      # JEA endpoint (as a virtual account, since the runner has no gMSA), so the ITHub tests
+      # call it through the client script exactly as ITHub will.
+      - name: Set up the ITHub JEA endpoint
+        if: matrix.shell == 'powershell'
+        run: |
+          Enable-PSRemoting -Force -SkipNetworkProfileCheck | Out-Null
+          ./Install-ITToolkit.ps1
+          ./src/ITToolkit/ITHub/Install-ITHubEndpoint.ps1 -ITHubAccount "$env:USERDOMAIN\$env:USERNAME" -RunAsVirtualAccount
+
       - name: Run tests (includes running every command against the runner)
         run: ./build/Invoke-Tests.ps1
+        env:
+          ITTOOLKIT_TEST_JEA: ${{ matrix.shell == 'powershell' && '1' || '' }}
 
       - name: Upload test results
         if: always()

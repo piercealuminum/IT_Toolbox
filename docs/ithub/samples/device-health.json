@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "toolkitVersion": "1.2.0",
+  "tool": "device-health",
+  "parameters": {
+    "computerName": "PC0142"
+  },
+  "requestedBy": "Jordan Lee",
+  "startedAt": "2026-11-10T14:05:11Z",
+  "finishedAt": "2026-11-10T14:05:19Z",
+  "status": "completed",
+  "results": [
+    {
+      "type": "ITToolkit.CheckResult",
+      "computerName": "PC0142",
+      "category": "System",
+      "check": "System",
+      "status": "Info",
+      "detail": "Dell Inc. Latitude 7450, serial ABC1234, Windows 11 Enterprise 24H2 (build 26100.2314)"
+    },
+    {
+      "type": "ITToolkit.CheckResult",
+      "computerName": "PC0142",
+      "category": "System",
+      "check": "Signed-in user",
+      "status": "Info",
+      "detail": "CORP\\jlee"
+    },
+    {
+      "type": "ITToolkit.CheckResult",
+      "computerName": "PC0142",
+      "category": "System",
+      "check": "Device join",
+      "status": "Info",
+      "detail": "Hybrid joined (domain CORP, tenant Example Corp); Intune enrolled (jordan.lee@example.com)"
+    },
+    {
+      "type": "ITToolkit.CheckResult",
+      "computerName": "PC0142",
+      "category": "Maintenance",
+      "check": "Uptime",
+      "status": "Warn",
+      "detail": "23.4 days since last boot (2026-10-18 07:55)"
+    },
+    {
+      "type": "ITToolkit.CheckResult",
+      "computerName": "PC0142",
+      "category": "Maintenance",
+      "check": "Pending reboot",
+      "status": "Warn",
+      "detail": "Restart needed: Windows Update"
+    },
+    {
+      "type": "ITToolkit.CheckResult",
+      "computerName": "PC0142",
+      "category": "Storage",
+      "check": "Disk C:",
+      "status": "Fail",
+      "detail": "3.1 GB free of 237.5 GB (1%)"
+    },
+    {
+      "type": "ITToolkit.CheckResult",
+      "computerName": "PC0142",
+      "category": "System",
+      "check": "Memory",
+      "status": "Info",
+      "detail": "16.0 GB total, 5.2 GB free (33%)"
+    },
+    {
+      "type": "ITToolkit.CheckResult",
+      "computerName": "PC0142",
+      "category": "Security",
+      "check": "BitLocker",
+      "status": "OK",
+      "detail": "C: on"
+    },
+    {
+      "type": "ITToolkit.CheckResult",
+      "computerName": "PC0142",
+      "category": "Security",
+      "check": "Antivirus",
+      "status": "OK",
+      "detail": "Defender real-time protection on, signatures 0 day(s) old, tamper protection on"
+    },
+    {
+      "type": "ITToolkit.CheckResult",
+      "computerName": "PC0142",
+      "category": "Security",
+      "check": "Firewall",
+      "status": "OK",
+      "detail": "On for all profiles (Domain, Private, Public)"
+    },
+    {
+      "type": "ITToolkit.CheckResult",
+      "computerName": "PC0142",
+      "category": "Maintenance",
+      "check": "Windows updates",
+      "status": "OK",
+      "detail": "Newest update KB5044284 installed 2026-10-29 (12 days ago)"
+    },
+    {
+      "type": "ITToolkit.CheckResult",
+      "computerName": "PC0142",
+      "category": "Security",
+      "check": "Secure Boot",
+      "status": "OK",
+      "detail": "On"
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "ticketNote": "== Device health check ==\nCollected 2026-11-10 14:05 by Jordan Lee with ITToolkit\n\nPC0142: 1 fail, 2 warn, 5 OK, 4 info\n\nNeeds attention:\n  [FAIL] Disk C: - 3.1 GB free of 237.5 GB (1%)\n  [WARN] Uptime - 23.4 days since last boot (2026-10-18 07:55)\n  [WARN] Pending reboot - Restart needed: Windows Update\n\nAll checks:\nCheck           Status Detail\n-----           ------ ------\nSystem          Info   Dell Inc. Latitude 7450, serial ABC1234, Windows 11 Enterprise 24H2 (build 26100.2314)\nSigned-in user  Info   CORP\\jlee\nDevice join     Info   Hybrid joined (domain CORP, tenant Example Corp); Intune enrolled (jordan.lee@example.com)\nUptime          Warn   23.4 days since last boot (2026-10-18 07:55)\nPending reboot  Warn   Restart needed: Windows Update\nDisk C:         Fail   3.1 GB free of 237.5 GB (1%)\nMemory          Info   16.0 GB total, 5.2 GB free (33%)\nBitLocker       OK     C: on\nAntivirus       OK     Defender real-time protection on, signatures 0 day(s) old, tamper protection on\nFirewall        OK     On for all profiles (Domain, Private, Public)\nWindows updates OK     Newest update KB5044284 installed 2026-10-29 (12 days ago)\nSecure Boot     OK     On",
+  "summary": {
+    "fail": 1,
+    "warn": 2,
+    "ok": 5,
+    "info": 4
+  }
+}
