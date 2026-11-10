@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0
+
+- `Get-ITUserStatus`: Active Directory account check (enabled, locked out, bad passwords,
+  password and account expiry, last logon) plus Entra ID sync, sign-in block, licenses and
+  MFA methods through Microsoft Graph when connected.
+- `Get-ITLockoutSource`: lockout events (4740) from the PDC emulator with the caller computer.
+- `Reset-ITUserPassword`: passphrase reset with change at next sign-in and unlock; confirms
+  first, supports `-WhatIf`, and always returns the new passphrase even if a later step fails.
+- `ConvertTo-ITTicketNote` handles user checks and never includes a reset passphrase.
+- `Test-ITPort` waits 3 seconds by default (was 2), because Windows takes about 2 seconds to
+  report a refused port.
+- Tests: fixed two failures on Windows PowerShell 5.1 (port timing, link cleanup).
+
 ## 1.0.0
 
 First release.

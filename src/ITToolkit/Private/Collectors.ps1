@@ -397,6 +397,28 @@ $script:ITCollectors['EventLog'] = {
     }
 }
 
+$script:ITCollectors['LockoutEvents'] = {
+    # Account lockout events (4740) from this domain controller's Security log, as XML so the
+    # named fields can be read reliably by the converter.
+    param([int]$Hours)
+
+    $milliseconds = [int64]$Hours * 3600000
+    $xpath = "*[System[(EventID=4740) and TimeCreated[timediff(@SystemTime) <= $milliseconds]]]"
+    $events = @()
+    $errors = @()
+    try {
+        $events = @(Get-WinEvent -LogName 'Security' -FilterXPath $xpath -MaxEvents 5000 -ErrorAction Stop | ForEach-Object {
+                [pscustomobject]@{ TimeCreated = $_.TimeCreated; Xml = $_.ToXml() }
+            })
+    }
+    catch {
+        if ($_.FullyQualifiedErrorId -notlike 'NoMatchingEventsFound*') {
+            $errors = @("could not read the Security log: $($_.Exception.Message)")
+        }
+    }
+    [pscustomobject]@{ Events = $events; Errors = $errors }
+}
+
 $script:ITCollectors['LoggedOnUser'] = {
     $quser = Join-Path $env:SystemRoot 'System32\quser.exe'
     if (-not (Test-Path -LiteralPath $quser)) {

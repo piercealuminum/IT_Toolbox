@@ -1,11 +1,11 @@
 @{
     RootModule           = 'ITToolkit.psm1'
-    ModuleVersion        = '1.0.0'
+    ModuleVersion        = '1.1.0'
     CompatiblePSEditions = @('Desktop', 'Core')
     GUID                 = '0d466920-fa5f-4e94-9845-e2c914dccdef'
     Author               = 'IT Department'
     Copyright            = 'Internal use.'
-    Description          = 'Everyday diagnostics for the IT team: device health, pending reboots, local admins, installed software, event log summaries, signed-in users, network and port tests, temp file cleanup, passphrases and ticket notes.'
+    Description          = 'Everyday diagnostics for the IT team: device health, pending reboots, local admins, installed software, event log summaries, signed-in users, network and port tests, temp file cleanup, user account status, lockout sources, password resets, passphrases and ticket notes.'
     PowerShellVersion    = '5.1'
     FormatsToProcess     = @('ITToolkit.Format.ps1xml')
     FunctionsToExport    = @(
@@ -15,11 +15,14 @@
         'Get-ITEventSummary'
         'Get-ITInstalledSoftware'
         'Get-ITLocalAdmin'
+        'Get-ITLockoutSource'
         'Get-ITLoggedOnUser'
         'Get-ITPendingReboot'
         'Get-ITToolkitCommand'
         'Get-ITToolkitSetting'
+        'Get-ITUserStatus'
         'New-ITPassphrase'
+        'Reset-ITUserPassword'
         'Test-ITNetwork'
         'Test-ITPort'
     )

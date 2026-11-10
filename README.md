@@ -20,6 +20,9 @@ keyboard to find out what is wrong. It complements ITHub rather than duplicating
 | `Test-ITNetwork` | Is the network the problem? Adapter, DHCP, gateway, DNS, Microsoft 365, proxy, time sync | No |
 | `Test-ITPort` | Can this PC (or that PC) reach a server on a port? | No |
 | `Clear-ITTempFile` | Free disk space by removing old temp files (supports `-WhatIf`) | **Yes** |
+| `Get-ITUserStatus` | Why can't this user sign in? AD enabled, locked out, password expiry; Entra ID sync, sign-in block, licenses, MFA methods | No |
+| `Get-ITLockoutSource` | Which computer keeps locking this account? | No |
+| `Reset-ITUserPassword` | Reset to a readable passphrase, require a change, unlock (asks first, supports `-WhatIf`) | **Yes** |
 | `New-ITPassphrase` | A temporary password that is easy to read out over the phone | No |
 | `ConvertTo-ITTicketNote` | Turn any result into a note for the ticket | No |
 | `Get-ITToolkitCommand` | What can ITToolkit do? (also exports a catalog for the command cookbook) | No |
@@ -49,9 +52,11 @@ Clear-ITTempFile -ComputerName PC0142
 Get-ITLoggedOnUser -ComputerName RDS01
 Get-ITPendingReboot -ComputerName RDS01
 
-# Password reset
-Set-ADAccountPassword jsmith -Reset -NewPassword (New-ITPassphrase -AsSecureString)
-New-ITPassphrase    # to read out to the user
+# "I can't sign in"
+Get-ITUserStatus jlee
+Get-ITLockoutSource jlee
+Reset-ITUserPassword jlee              # shows the new passphrase to read out
+Get-ITUserStatus jlee | ConvertTo-ITTicketNote -Clipboard
 
 # Check many PCs at once
 Get-Content .\lab-pcs.txt | Get-ITDeviceHealth -Summary | Where-Object Fail -gt 0
@@ -76,6 +81,44 @@ all work. The default view shows the useful columns; `Select-Object *` shows eve
 - **Your own PC**: run PowerShell as administrator to include BitLocker and other users'
   temp folders. Without it those checks report *Info: run as administrator*
   instead of failing.
+
+## User accounts (hybrid AD and Entra ID)
+
+`Get-ITUserStatus`, `Get-ITLockoutSource` and `Reset-ITUserPassword` work against Active
+Directory from the tech's PC. They read and write on the **PDC emulator** by default,
+because it has the most current lockout and bad-password data and a reset there takes
+effect at once. Use `-Server` to pick another domain controller.
+
+What each tech needs:
+
+- **ActiveDirectory module (RSAT)**. On Windows 10/11, from an elevated window:
+  `Add-WindowsCapability -Online -Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0`
+- **Reset and unlock rights** on the users' OUs, for `Reset-ITUserPassword`.
+- **For `Get-ITLockoutSource`**: PowerShell remoting to the PDC emulator, as a domain admin
+  or as a member of both *Remote Management Users* and *Event Log Readers* on the DCs.
+  The second option is the one to give help desk staff.
+- **For the Entra ID part of `Get-ITUserStatus`** (optional): Microsoft Graph PowerShell,
+  connected once per window:
+  ```powershell
+  Install-Module Microsoft.Graph.Users, Microsoft.Graph.Identity.SignIns -Scope CurrentUser
+  Connect-MgGraph -Scopes User.Read.All, UserAuthenticationMethod.Read.All, AuditLog.Read.All
+  ```
+  The first connection needs an admin to consent to those permissions for the tenant. Last
+  sign-in time also needs Entra ID P1. Without Graph, the command checks AD only and
+  says how to connect.
+
+Things to know in a hybrid domain:
+
+- After a reset, Entra Connect's password hash sync sends the new password to Microsoft 365
+  within a few minutes. Microsoft 365 only forces the user to change it if Entra Connect has
+  `ForcePasswordChangeOnLogOn` turned on. Otherwise the change happens at the next Windows
+  sign-in or with Ctrl+Alt+Del, *Change a password*.
+- Failed Microsoft 365 sign-ins do not lock the AD account (Entra ID has its own smart
+  lockout), so `Get-ITLockoutSource` shows on-premises lockouts only.
+- Enabling or disabling a user in AD reaches Microsoft 365 at the next sync (up to 30 minutes).
+  `Get-ITUserStatus` flags the gap when the two disagree.
+- `Reset-ITUserPassword` output shows the passphrase once. `ConvertTo-ITTicketNote` leaves it
+  out, so it never ends up in ITHub.
 
 ## Installing for the team
 
@@ -125,7 +168,8 @@ Intune so every tech uses the same values.
 
 ## Safety
 
-- Everything except `Clear-ITTempFile` is read-only.
+- Everything except `Clear-ITTempFile` and `Reset-ITUserPassword` is read-only.
+  `Reset-ITUserPassword` asks before every reset unless you add `-Confirm:$false`.
 - `Clear-ITTempFile` only touches `C:\Windows\Temp` and each profile's `AppData\Local\Temp`,
   and only removes files created and last changed more than 7 days ago (configurable).
   Files in use are skipped. It never follows links or junctions, and skips a temp folder
@@ -176,6 +220,8 @@ src/ITToolkit/
   Private/Collectors.ps1    code that runs ON the target PC and returns raw facts
   Private/Converters.ps1    turns raw facts into OK/Warn/Fail results (runs on your PC)
   Private/Parsers.ps1       reads dsregcmd, quser, w32tm and netsh output
+  Private/Directory.ps1     Active Directory and Microsoft Graph lookups (user commands)
+  Private/UserConverters.ps1  turns AD and Entra ID data into user results
   Data/Words.txt            word list for New-ITPassphrase
 tests/                      Pester 5 tests
 build/                      test runner, 5.1 compatibility check, signing

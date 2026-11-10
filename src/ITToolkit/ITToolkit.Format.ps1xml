@@ -314,5 +314,74 @@
       </TableControl>
     </View>
 
+    <View>
+      <Name>ITToolkit.UserCheck</Name>
+      <ViewSelectedBy><TypeName>ITToolkit.UserCheck</TypeName></ViewSelectedBy>
+      <GroupBy><PropertyName>UserName</PropertyName></GroupBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>Check</Label><Width>16</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Status</Label><Width>6</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Detail</Label></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <Wrap/>
+            <TableColumnItems>
+              <TableColumnItem><PropertyName>Check</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Status</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Detail</PropertyName></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+
+    <View>
+      <Name>ITToolkit.Lockout</Name>
+      <ViewSelectedBy><TypeName>ITToolkit.Lockout</TypeName></ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>Time</Label><Width>16</Width></TableColumnHeader>
+          <TableColumnHeader><Label>UserName</Label><Width>20</Width></TableColumnHeader>
+          <TableColumnHeader><Label>CallerComputer</Label><Width>20</Width></TableColumnHeader>
+          <TableColumnHeader><Label>DomainController</Label><Width>24</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Note</Label></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <Wrap/>
+            <TableColumnItems>
+              <TableColumnItem><ScriptBlock>if ($_.TimeCreated) { ([datetime]$_.TimeCreated).ToString('yyyy-MM-dd HH:mm') }</ScriptBlock></TableColumnItem>
+              <TableColumnItem><PropertyName>UserName</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>CallerComputer</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>DomainController</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Note</PropertyName></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+
+    <View>
+      <Name>ITToolkit.PasswordReset</Name>
+      <ViewSelectedBy><TypeName>ITToolkit.PasswordReset</TypeName></ViewSelectedBy>
+      <ListControl>
+        <ListEntries>
+          <ListEntry>
+            <ListItems>
+              <ListItem><PropertyName>UserName</PropertyName></ListItem>
+              <ListItem><PropertyName>DisplayName</PropertyName></ListItem>
+              <ListItem><PropertyName>Passphrase</PropertyName></ListItem>
+              <ListItem><PropertyName>MustChangeAtNextSignIn</PropertyName></ListItem>
+              <ListItem><PropertyName>Unlocked</PropertyName></ListItem>
+              <ListItem><PropertyName>DomainController</PropertyName></ListItem>
+              <ListItem><Label>Problems</Label><ScriptBlock>@($_.Problems) -join '; '</ScriptBlock></ListItem>
+            </ListItems>
+          </ListEntry>
+        </ListEntries>
+      </ListControl>
+    </View>
+
   </ViewDefinitions>
 </Configuration>

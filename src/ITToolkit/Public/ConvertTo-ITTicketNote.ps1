@@ -5,9 +5,9 @@ function ConvertTo-ITTicketNote {
 
     .DESCRIPTION
     Pipe ITToolkit results into this command to get one block of plain text with a title,
-    when and by whom it was collected, and the results as a table. For health and network
-    checks it adds a one-line result count and lists the problems first under
-    "Needs attention".
+    when and by whom it was collected, and the results as a table. For health, network and
+    user checks it adds a one-line result count and lists the problems first under
+    "Needs attention". Password reset results never include the passphrase.
 
     Use -Clipboard to copy the note as well, ready to paste.
 
@@ -59,6 +59,8 @@ function ConvertTo-ITTicketNote {
             'ITToolkit.Session'       = 'Signed-in users'
             'ITToolkit.PortTest'      = 'Port test'
             'ITToolkit.TempCleanup'   = 'Temp file cleanup'
+            'ITToolkit.Lockout'       = 'Account lockout source'
+            'ITToolkit.PasswordReset' = 'Password reset'
         }
     }
 
@@ -71,8 +73,13 @@ function ConvertTo-ITTicketNote {
 
         $typeName = $items[0].PSObject.TypeNames[0]
         $isCheck = @($items | Where-Object { $_.PSObject.TypeNames -contains 'ITToolkit.CheckResult' }).Count -eq $items.Count
+        $isUserCheck = @($items | Where-Object { $_.PSObject.TypeNames -contains 'ITToolkit.UserCheck' }).Count -eq $items.Count
+        $groupBy = if ($isUserCheck) { 'UserName' } else { 'ComputerName' }
         if (-not $Title) {
-            if ($isCheck) {
+            if ($isUserCheck) {
+                $Title = 'User account check'
+            }
+            elseif ($isCheck) {
                 $categories = @($items | ForEach-Object { $_.Category } | Select-Object -Unique)
                 $Title = if ($categories.Count -eq 1 -and $categories[0] -eq 'Network') { 'Network test' } else { 'Device health check' }
             }
@@ -85,8 +92,8 @@ function ConvertTo-ITTicketNote {
         $lines.Add("== $Title ==")
         $lines.Add(('Collected {0:yyyy-MM-dd HH:mm} by {1} with ITToolkit' -f (Get-Date), $who))
 
-        if ($isCheck) {
-            foreach ($group in @($items | Group-Object -Property ComputerName)) {
+        if ($isCheck -or $isUserCheck) {
+            foreach ($group in @($items | Group-Object -Property $groupBy)) {
                 $checks = @($group.Group)
                 $count = @{}
                 foreach ($status in 'Fail', 'Warn', 'OK', 'Info') { $count[$status] = @($checks | Where-Object { $_.Status -eq $status }).Count }
@@ -106,6 +113,14 @@ function ConvertTo-ITTicketNote {
                 $table = $checks | Select-Object -Property Check, Status, Detail | Format-Table -AutoSize -Wrap | Out-String -Width $Width
                 $lines.Add($table.Trim([char[]]"`r`n"))
             }
+        }
+        elseif ($typeName -eq 'ITToolkit.PasswordReset') {
+            # Never put a password in a ticket.
+            $lines.Add('')
+            $table = $items | Select-Object -Property UserName, DisplayName, MustChangeAtNextSignIn, Unlocked, DomainController |
+                Format-Table -AutoSize -Wrap | Out-String -Width $Width
+            $lines.Add($table.Trim([char[]]"`r`n"))
+            $lines.Add('The new password was given to the user directly and is not recorded here.')
         }
         else {
             $lines.Add('')

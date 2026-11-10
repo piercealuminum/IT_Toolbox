@@ -44,6 +44,11 @@
         Hours     = 24
         MaxEvents = 500
     }
+    User         = @{
+        # Warn when a password or account expires within this many days.
+        PasswordExpiryWarnDays = 7
+        AccountExpiryWarnDays  = 14
+    }
     Passphrase   = @{
         WordCount = 4
         Separator = '-'

@@ -86,7 +86,7 @@ Describe 'Collectors' {
     }
 
     It '<_> does not call ITToolkit functions or use $script: variables (it must run on a remote computer)' -ForEach @(
-        'Clock', 'PendingReboot', 'DeviceHealth', 'LocalAdmin', 'InstalledSoftware', 'EventLog', 'LoggedOnUser', 'TempFiles', 'NetworkConfig', 'TcpTest'
+        'Clock', 'PendingReboot', 'DeviceHealth', 'LocalAdmin', 'InstalledSoftware', 'EventLog', 'LockoutEvents', 'LoggedOnUser', 'TempFiles', 'NetworkConfig', 'TcpTest'
     ) {
         $scriptBlock = $collectors[$_]
         $scriptBlock | Should -Not -BeNullOrEmpty
