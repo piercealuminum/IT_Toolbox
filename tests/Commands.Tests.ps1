@@ -135,7 +135,8 @@ Describe 'Test-ITPort' {
     }
 
     It 'reports a closed port as refused' {
-        $result = Test-ITPort -ComputerName 127.0.0.1 -Port $closedPort
+        # Windows retries a refused connection for about 2 seconds before reporting it.
+        $result = Test-ITPort -ComputerName 127.0.0.1 -Port $closedPort -TimeoutMs 6000
         $result.Open | Should -BeFalse
         $result.Detail | Should -Match '^Refused'
     }
@@ -275,6 +276,14 @@ Describe 'Test-ITLocalComputer' {
 
 Describe 'TempFiles collector' {
     # The deletion logic is plain .NET, so it is tested here on real files.
+    BeforeAll {
+        function Remove-TestLink([string]$Path) {
+            # Removes only the link. Windows PowerShell 5.1's Remove-Item fails on directory
+            # links (NullReferenceException), and with -Recurse can walk into their target.
+            if ($Path -and (Test-Path -LiteralPath $Path)) { [System.IO.Directory]::Delete($Path) }
+        }
+    }
+
     BeforeEach {
         $script:root = Join-Path ([System.IO.Path]::GetTempPath()) ("ittoolkit-temp-{0}" -f [guid]::NewGuid())
         $script:outside = Join-Path ([System.IO.Path]::GetTempPath()) ("ittoolkit-outside-{0}" -f [guid]::NewGuid())
@@ -304,6 +313,7 @@ Describe 'TempFiles collector' {
     }
 
     AfterEach {
+        Remove-TestLink (Join-Path $root 'link')
         Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
         Remove-Item -LiteralPath $outside -Recurse -Force -ErrorAction SilentlyContinue
     }
@@ -347,7 +357,7 @@ Describe 'TempFiles collector' {
             Test-Path -LiteralPath (Join-Path $outside 'precious.txt') | Should -BeTrue
         }
         finally {
-            Remove-Item -LiteralPath $linkedRoot -Force -ErrorAction SilentlyContinue
+            Remove-TestLink $linkedRoot
         }
     }
 

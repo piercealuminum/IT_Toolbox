@@ -23,7 +23,8 @@ function Test-ITPort {
     A named set of ports instead of -Port: DomainController, Email, Printer, RDP, SMB, SQL, SSH, Web, WinRM.
 
     .PARAMETER TimeoutMs
-    How long to wait for each connection. Default 2000.
+    How long to wait for each connection. Default 3000 (Windows takes about 2 seconds to report
+    a refused port, so shorter timeouts report "no answer" instead of "refused").
 
     .PARAMETER Source
     Run the test from this computer instead of yours (needs PowerShell remoting to it).
@@ -62,7 +63,7 @@ function Test-ITPort {
         [string]$Preset,
 
         [ValidateRange(100, 60000)]
-        [int]$TimeoutMs = 2000,
+        [int]$TimeoutMs = 3000,
 
         [string]$Source = [Environment]::MachineName,
 
