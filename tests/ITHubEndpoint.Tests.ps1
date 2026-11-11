@@ -83,7 +83,9 @@ Describe 'ITHub through the JEA endpoint' -Skip:(-not $runJea) -Tag 'JEA' {
     It 'reads real data through the endpoint: CIM, registry and ADSI' {
         $reboot = Invoke-Client ('{{"tool":"pending-reboot","parameters":{{"computerName":"{0}"}}}}' -f $env:COMPUTERNAME)
         $reboot.status | Should -Be 'completed' -Because "errors: $($reboot.errors)"
-        $reboot.results[0].uptimeDays | Should -BeGreaterThan 0
+        # CI machines boot minutes before the run, so uptime can round to 0.0 days.
+        $reboot.results[0].uptimeDays | Should -Not -BeNullOrEmpty
+        $reboot.results[0].lastBootTime | Should -Not -BeNullOrEmpty
 
         $software = Invoke-Client ('{{"tool":"installed-software","parameters":{{"computerName":"{0}"}}}}' -f $env:COMPUTERNAME)
         $software.status | Should -Be 'completed' -Because "errors: $($software.errors)"

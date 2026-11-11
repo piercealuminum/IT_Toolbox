@@ -552,20 +552,32 @@ $script:ITCollectors['NetworkConfig'] = {
 
     $adapters = @()
     try {
-        $adapters = @(Get-NetIPConfiguration -ErrorAction Stop |
-                Where-Object { $_.NetAdapter -and [string]$_.NetAdapter.Status -eq 'Up' } |
-                ForEach-Object {
-                    $netProfile = $_.NetProfile
-                    [pscustomobject]@{
-                        Alias           = $_.InterfaceAlias
-                        Description     = $_.InterfaceDescription
-                        IPv4            = @($_.IPv4Address | ForEach-Object { '{0}/{1}' -f $_.IPAddress, $_.PrefixLength })
-                        Gateways        = @($_.IPv4DefaultGateway | ForEach-Object { $_.NextHop })
-                        DnsServers      = @($_.DNSServer | Where-Object { $_.AddressFamily -eq 2 } | ForEach-Object { $_.ServerAddresses })
-                        NetworkName     = $(if ($netProfile) { [string]$netProfile.Name } else { $null })
-                        NetworkCategory = $(if ($netProfile) { [string]$netProfile.NetworkCategory } else { $null })
-                    }
-                })
+        # .NET rather than Get-NetIPConfiguration: that is a script function calling three
+        # other modules, which a JEA endpoint cannot load for it. This works everywhere.
+        $categories = @{}
+        try {
+            foreach ($connection in @(Get-CimInstance -Namespace 'root/StandardCimv2' -ClassName MSFT_NetConnectionProfile -ErrorAction Stop)) {
+                $category = switch ([int]$connection.NetworkCategory) { 0 { 'Public' } 1 { 'Private' } 2 { 'DomainAuthenticated' } default { [string]$connection.NetworkCategory } }
+                $categories[[string]$connection.InterfaceAlias] = @{ Name = [string]$connection.Name; Category = $category }
+            }
+        }
+        catch { $errors.Add("Network profiles: $($_.Exception.Message)") }
+
+        $adapters = @(foreach ($nic in [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces()) {
+                if ([string]$nic.OperationalStatus -ne 'Up') { continue }
+                if ([string]$nic.NetworkInterfaceType -in @('Loopback', 'Tunnel')) { continue }
+                $properties = $nic.GetIPProperties()
+                $connection = $categories[[string]$nic.Name]
+                [pscustomobject]@{
+                    Alias           = [string]$nic.Name
+                    Description     = [string]$nic.Description
+                    IPv4            = @($properties.UnicastAddresses | Where-Object { [string]$_.Address.AddressFamily -eq 'InterNetwork' } | ForEach-Object { '{0}/{1}' -f $_.Address, $_.PrefixLength })
+                    Gateways        = @($properties.GatewayAddresses | Where-Object { [string]$_.Address.AddressFamily -eq 'InterNetwork' -and [string]$_.Address -ne '0.0.0.0' } | ForEach-Object { [string]$_.Address })
+                    DnsServers      = @($properties.DnsAddresses | Where-Object { [string]$_.AddressFamily -eq 'InterNetwork' } | ForEach-Object { [string]$_ })
+                    NetworkName     = $(if ($connection) { $connection.Name } else { $null })
+                    NetworkCategory = $(if ($connection) { $connection.Category } else { $null })
+                }
+            })
     }
     catch { $errors.Add("Adapters: $($_.Exception.Message)") }
 

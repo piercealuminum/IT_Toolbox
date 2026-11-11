@@ -75,7 +75,7 @@ $script:ITCollectorDependencies = @{
     LockoutEvents = @(@{ Command = 'Get-WinEvent'; Module = @('Microsoft.PowerShell.Diagnostics') })
     TempFiles     = @(@{ Command = 'Get-CimInstance'; Module = @('CimCmdlets') })
     NetworkConfig = @(
-        @{ Command = 'Get-NetIPConfiguration'; Module = @('NetTCPIP') }
+        @{ Command = 'Get-CimInstance'; Module = @('CimCmdlets') }
         @{ Command = 'Resolve-DnsName'; Module = @('DnsClient') }
     )
 }
