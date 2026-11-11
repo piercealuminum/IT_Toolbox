@@ -115,3 +115,49 @@ Describe 'Code that runs inside the ITHub JEA endpoint' {
         $bad | Should -BeNullOrEmpty
     }
 }
+
+Describe 'Module loading for local collectors' {
+    It 'loads a missing command''s module before running a collector locally' {
+        InModuleScope ITToolkit {
+            Mock Test-ITCommand { $false }
+            Mock Import-Module { }
+            $script:ITCollectors['DependencyProbe'] = { 'ran' }
+            $script:ITCollectorDependencies['DependencyProbe'] = @(@{ Command = 'Get-SomethingRare'; Module = @('FirstChoice', 'SecondChoice') })
+            try {
+                $target = Open-ITTarget -ComputerName 'localhost'
+                Invoke-ITCollector -Name 'DependencyProbe' -Target $target | Should -Be 'ran'
+                Should -Invoke Import-Module -Times 1 -Exactly -ParameterFilter { $Name -eq 'FirstChoice' }
+                Should -Invoke Import-Module -Times 1 -Exactly -ParameterFilter { $Name -eq 'SecondChoice' }
+            }
+            finally {
+                $script:ITCollectors.Remove('DependencyProbe')
+                $script:ITCollectorDependencies.Remove('DependencyProbe')
+            }
+        }
+    }
+
+    It 'loads nothing when the command is already available' {
+        InModuleScope ITToolkit {
+            Mock Import-Module { }
+            Import-ITCommandModule -Command 'Get-Date' -Module 'Microsoft.PowerShell.Utility' | Should -BeTrue
+            Should -Invoke Import-Module -Times 0 -Exactly
+        }
+    }
+
+    It 'lists the module of every non-built-in command a collector calls' {
+        # Commands from modules that a JEA endpoint never loads on its own must be listed in
+        # $script:ITCollectorDependencies, or that collector fails inside the endpoint.
+        $needsListing = @('Get-CimInstance', 'Invoke-CimMethod', 'Get-MpComputerStatus', 'Get-NetFirewallProfile', 'Get-WinEvent', 'Get-NetIPConfiguration', 'Resolve-DnsName', 'Get-HotFix')
+        $collectors = InModuleScope ITToolkit { $script:ITCollectors }
+        $dependencies = InModuleScope ITToolkit { $script:ITCollectorDependencies }
+        foreach ($name in $collectors.Keys) {
+            $calls = @($collectors[$name].Ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] }, $true) | ForEach-Object { $_.GetCommandName() } | Where-Object { $needsListing -contains $_ } | Sort-Object -Unique)
+            $listed = @($dependencies[$name] | Where-Object { $_ } | ForEach-Object { $_.Command })
+            foreach ($call in $calls) {
+                # Invoke-CimMethod comes with Get-CimInstance (same module)
+                $covered = $listed -contains $call -or ($call -eq 'Invoke-CimMethod' -and $listed -contains 'Get-CimInstance')
+                $covered | Should -BeTrue -Because "collector $name calls $call"
+            }
+        }
+    }
+}

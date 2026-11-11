@@ -143,3 +143,26 @@ function Read-ITDataFile {
     # SafeGetValue throws if the file contains anything other than constants.
     $table.SafeGetValue()
 }
+
+function Import-ITCommandModule {
+    # Makes sure a command is available to ITToolkit's code, loading the module that provides
+    # it when needed. In a normal PowerShell window modules load on first use, so this finds
+    # the command and does nothing. A JEA endpoint does not load modules automatically, so
+    # there the module is imported into ITToolkit's own scope (not the caller's).
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Command,
+
+        [Parameter(Mandatory)]
+        [string[]]$Module
+    )
+
+    if (Test-ITCommand -Name $Command) { return $true }
+    foreach ($name in $Module) {
+        Import-Module -Name $name -ErrorAction SilentlyContinue -Verbose:$false
+        if (Test-ITCommand -Name $Command) { return $true }
+    }
+    return $false
+}

@@ -15,7 +15,12 @@ function Assert-ITActiveDirectory {
     [CmdletBinding()]
     param()
 
-    if (-not (Test-ITCommand -Name Get-ADUser)) {
+    # Skip the AD: drive when loading the module here: it only slows the import down.
+    $savedDrive = $env:ADPS_LoadDefaultDrive
+    $env:ADPS_LoadDefaultDrive = '0'
+    try { $available = Import-ITCommandModule -Command Get-ADUser -Module ActiveDirectory }
+    finally { $env:ADPS_LoadDefaultDrive = $savedDrive }
+    if (-not $available) {
         throw ('The ActiveDirectory module is not installed. On Windows 10 or 11 install it from an elevated window with: ' +
             'Add-WindowsCapability -Online -Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0')
     }
@@ -73,7 +78,9 @@ function Get-ITEntraUser {
     )
 
     $connectHint = 'Connect-MgGraph -Scopes User.Read.All, UserAuthenticationMethod.Read.All, AuditLog.Read.All'
-    if (-not (Test-ITCommand -Name Get-MgContext)) {
+    $null = Import-ITCommandModule -Command Get-MgUser -Module Microsoft.Graph.Users
+    $null = Import-ITCommandModule -Command Get-MgUserAuthenticationMethod -Module Microsoft.Graph.Identity.SignIns
+    if (-not (Import-ITCommandModule -Command Get-MgContext -Module Microsoft.Graph.Authentication)) {
         return [pscustomobject]@{ Available = $false; Reason = "Microsoft Graph PowerShell is not installed (Install-Module Microsoft.Graph.Users, Microsoft.Graph.Identity.SignIns -Scope CurrentUser), then $connectHint" }
     }
     if (-not (Get-MgContext)) {

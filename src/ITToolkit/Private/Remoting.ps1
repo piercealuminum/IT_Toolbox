@@ -97,6 +97,9 @@ function Invoke-ITCollector {
     if (-not $scriptBlock) { throw "ITToolkit: unknown collector '$Name'." }
 
     if ($Target.IsLocal) {
+        foreach ($dependency in @($script:ITCollectorDependencies[$Name])) {
+            if ($dependency) { $null = Import-ITCommandModule -Command $dependency.Command -Module $dependency.Module }
+        }
         # A remote collector starts with default preferences. Give a local one the same, so a
         # caller's -ErrorAction Stop or -WhatIf cannot change what it collects.
         $ErrorActionPreference = 'Continue'

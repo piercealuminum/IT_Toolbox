@@ -299,7 +299,7 @@ function Connect-ITHubGraph {
 
     $settings = (Get-ITSettings).ITHub
     if (-not ($settings.GraphTenantId -and $settings.GraphClientId -and $settings.GraphCertificateThumbprint)) { return $null }
-    if (-not (Test-ITCommand -Name Connect-MgGraph)) {
+    if (-not (Import-ITCommandModule -Command Connect-MgGraph -Module Microsoft.Graph.Authentication)) {
         return 'Microsoft Graph PowerShell is not installed on the ITHub server, so Entra ID was not checked.'
     }
     if (Get-MgContext) { return $null }

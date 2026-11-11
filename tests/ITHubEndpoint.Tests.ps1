@@ -73,9 +73,35 @@ Describe 'ITHub through the JEA endpoint' -Skip:(-not $runJea) -Tag 'JEA' {
         $envelope.status | Should -BeIn @('completed', 'completed_with_errors') -Because "errors: $($envelope.errors)"
         $checks = @($envelope.results | ForEach-Object { $_.check })
         $checks | Should -Contain 'System'
+        $checks | Should -Contain 'Uptime'
         $checks | Should -Contain 'Firewall'
+        ($envelope.results | Where-Object { $_.check -eq 'Firewall' }).detail | Should -Not -Match '^Not checked' 
         @($checks | Where-Object { $_ -like 'Disk *' }).Count | Should -BeGreaterThan 0
         $envelope.summary | Should -Not -BeNullOrEmpty
+    }
+
+    It 'reads real data through the endpoint: CIM, registry and ADSI' {
+        $reboot = Invoke-Client ('{{"tool":"pending-reboot","parameters":{{"computerName":"{0}"}}}}' -f $env:COMPUTERNAME)
+        $reboot.status | Should -Be 'completed' -Because "errors: $($reboot.errors)"
+        $reboot.results[0].uptimeDays | Should -BeGreaterThan 0
+
+        $software = Invoke-Client ('{{"tool":"installed-software","parameters":{{"computerName":"{0}"}}}}' -f $env:COMPUTERNAME)
+        $software.status | Should -Be 'completed' -Because "errors: $($software.errors)"
+        @($software.results).Count | Should -BeGreaterThan 0
+
+        $admins = Invoke-Client ('{{"tool":"local-admins","parameters":{{"computerName":"{0}"}}}}' -f $env:COMPUTERNAME)
+        $admins.status | Should -Be 'completed' -Because "errors: $($admins.errors)"
+        @($admins.results).Count | Should -BeGreaterThan 0
+    }
+
+    It 'reads event logs and network settings through the endpoint' {
+        $events = Invoke-Client ('{{"tool":"event-summary","parameters":{{"computerName":"{0}","hours":72}}}}' -f $env:COMPUTERNAME)
+        $events.status | Should -Be 'completed' -Because "errors: $($events.errors); warnings: $($events.warnings)"
+        @($events.warnings).Count | Should -Be 0 -Because "warnings: $($events.warnings)"
+
+        $network = Invoke-Client ('{{"tool":"network-test","parameters":{{"computerName":"{0}"}}}}' -f $env:COMPUTERNAME)
+        $network.status | Should -Be 'completed' -Because "errors: $($network.errors)"
+        @($network.results | Where-Object { $_.check -like 'Adapter *' }).Count | Should -BeGreaterThan 0
     }
 
     It 'refuses a bad request inside the endpoint too' {

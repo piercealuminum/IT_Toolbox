@@ -14,6 +14,10 @@
     a request on standard input, the envelope on standard output, and always valid JSON.
   - App-only Microsoft Graph sign-in for user checks run through ITHub (`ITHub` settings).
   - Sample envelopes in `docs/ithub/samples`, checked against the code by the tests.
+- Commands load the modules they need (CIM, Defender, firewall, network, event log, Active
+  Directory, Microsoft Graph) themselves, since a JEA endpoint loads nothing automatically.
+  Module code calls Select-Object, Get-Command and Get-Help module-qualified, because the
+  endpoint replaces those with restricted versions.
 - `ConvertTo-ITTicketNote -CollectedBy` names the person in the note, since ITHub's runs
   execute as a service account.
 - CI registers a real JEA endpoint on Windows PowerShell 5.1 and calls it through the client

@@ -57,3 +57,25 @@ $script:ITPortPresets = @{
     Web              = @(80, 443)
     WinRM            = @(5985, 5986)
 }
+
+# Commands each collector uses from modules that are not always loaded, and the modules
+# that provide them. Invoke-ITCollector loads them before running a collector locally
+# (inside the ITHub JEA endpoint nothing loads automatically). Remote sessions load their
+# own. The tests check every Get-/Test-/Resolve-/Confirm- command a collector calls is either
+# built in or listed here.
+$script:ITCollectorDependencies = @{
+    PendingReboot = @(@{ Command = 'Get-CimInstance'; Module = @('CimCmdlets') })
+    DeviceHealth  = @(
+        @{ Command = 'Get-CimInstance'; Module = @('CimCmdlets') }
+        @{ Command = 'Get-MpComputerStatus'; Module = @('ConfigDefender', 'Defender') }
+        @{ Command = 'Get-NetFirewallProfile'; Module = @('NetSecurity') }
+        @{ Command = 'Get-HotFix'; Module = @('Microsoft.PowerShell.Management') }
+    )
+    EventLog      = @(@{ Command = 'Get-WinEvent'; Module = @('Microsoft.PowerShell.Diagnostics') })
+    LockoutEvents = @(@{ Command = 'Get-WinEvent'; Module = @('Microsoft.PowerShell.Diagnostics') })
+    TempFiles     = @(@{ Command = 'Get-CimInstance'; Module = @('CimCmdlets') })
+    NetworkConfig = @(
+        @{ Command = 'Get-NetIPConfiguration'; Module = @('NetTCPIP') }
+        @{ Command = 'Resolve-DnsName'; Module = @('DnsClient') }
+    )
+}
