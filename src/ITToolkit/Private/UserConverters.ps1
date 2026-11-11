@@ -129,7 +129,7 @@ function ConvertTo-ITUserCheck {
     # Account
     $parts = @()
     $name = if ($User.DisplayName) { [string]$User.DisplayName } else { $userName }
-    $ids = @($userName, [string]$User.UserPrincipalName | Where-Object { $_ } | Select-Object -Unique) -join ', '
+    $ids = @($userName, [string]$User.UserPrincipalName | Where-Object { $_ } | Microsoft.PowerShell.Utility\Select-Object -Unique) -join ', '
     $parts += "$name ($ids)"
     $job = @([string]$User.Title, [string]$User.Department | Where-Object { $_ }) -join ', '
     if ($job) { $parts += $job }

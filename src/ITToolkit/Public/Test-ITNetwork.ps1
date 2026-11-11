@@ -70,8 +70,8 @@ function Test-ITNetwork {
     begin {
         $settings = (Get-ITSettings).Network
         if (-not $PSBoundParameters.ContainsKey('TimeoutMs')) { $TimeoutMs = $settings.TimeoutMs }
-        $names = [string[]]@(@($settings.DnsNames) + @($settings.InternalDnsNames) + $DnsName | Where-Object { $_ } | Select-Object -Unique)
-        $tcpList = [string[]]@(@($settings.TcpTargets) + $TcpTarget | Where-Object { $_ } | Select-Object -Unique | ForEach-Object {
+        $names = [string[]]@(@($settings.DnsNames) + @($settings.InternalDnsNames) + $DnsName | Where-Object { $_ } | Microsoft.PowerShell.Utility\Select-Object -Unique)
+        $tcpList = [string[]]@(@($settings.TcpTargets) + $TcpTarget | Where-Object { $_ } | Microsoft.PowerShell.Utility\Select-Object -Unique | ForEach-Object {
                 $parsed = ConvertTo-ITTcpTarget -Target $_
                 '{0}|{1}' -f $parsed.Host, $parsed.Port
             })

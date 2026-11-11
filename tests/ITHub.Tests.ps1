@@ -229,7 +229,7 @@ Describe 'Connect-ITHubGraph' {
         $env:ITTOOLKIT_SETTINGS = $file
         try {
             InModuleScope ITToolkit {
-                Mock Get-Command -ParameterFilter { $Name -eq 'Connect-MgGraph' } { $null }
+                Mock Test-ITCommand -ParameterFilter { $Name -eq 'Connect-MgGraph' } { $false }
                 Connect-ITHubGraph | Should -Match 'not installed'
             }
         }

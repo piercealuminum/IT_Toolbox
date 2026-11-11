@@ -97,3 +97,21 @@ Describe 'Collectors' {
         $scoped | Should -BeNullOrEmpty
     }
 }
+
+Describe 'Code that runs inside the ITHub JEA endpoint' {
+    # A JEA RestrictedRemoteServer session replaces these commands with restricted versions
+    # that module code would pick up, and does not load Import-PowerShellDataFile (a script
+    # function in Windows PowerShell 5.1). Module code must call them module-qualified, or
+    # not at all. Help text and comments are not code, so they are not checked.
+    It '<_> calls no restricted command by its short name' -ForEach @(
+        Get-ChildItem -Path (Join-Path $PSScriptRoot '..\src\ITToolkit\Private'), (Join-Path $PSScriptRoot '..\src\ITToolkit\Public') -Filter '*.ps1' | ForEach-Object { $_.Name }
+    ) {
+        $file = Get-ChildItem -Path (Join-Path $PSScriptRoot '..\src\ITToolkit') -Recurse -Filter $_ | Select-Object -First 1
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$null, [ref]$null)
+        $restricted = @('Select-Object', 'Measure-Object', 'Get-Command', 'Get-Help', 'Get-FormatData', 'Out-Default', 'Exit-PSSession', 'Import-PowerShellDataFile')
+        $bad = @($ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.CommandAst] }, $true) |
+                Where-Object { $restricted -contains $_.GetCommandName() -and $_.CommandElements[0].Extent.Text -notmatch '\\' } |
+                ForEach-Object { '{0} (line {1})' -f $_.GetCommandName(), $_.Extent.StartLineNumber })
+        $bad | Should -BeNullOrEmpty
+    }
+}

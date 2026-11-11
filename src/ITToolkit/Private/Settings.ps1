@@ -1,6 +1,6 @@
 # Settings: shipped defaults (ITToolkit.Defaults.psd1) plus an optional organization file
 # ($env:ProgramData\ITToolkit\Settings.psd1, or the path in $env:ITTOOLKIT_SETTINGS).
-# Both are data files, read with Import-PowerShellDataFile, so they cannot run code.
+# Both are data files, read with Read-ITDataFile (constants only), so they cannot run code.
 
 function Get-ITSettingsOverridePath {
     [CmdletBinding()]
@@ -16,12 +16,12 @@ function Read-ITSettingsFile {
     [CmdletBinding()]
     param()
 
-    $defaults = Import-PowerShellDataFile -LiteralPath (Join-Path $script:ITModuleRoot 'ITToolkit.Defaults.psd1')
+    $defaults = Read-ITDataFile -LiteralPath (Join-Path $script:ITModuleRoot 'ITToolkit.Defaults.psd1')
     $overridePath = Get-ITSettingsOverridePath
     $override = @{}
     if ($overridePath -and (Test-Path -LiteralPath $overridePath -PathType Leaf)) {
         try {
-            $override = Import-PowerShellDataFile -LiteralPath $overridePath
+            $override = Read-ITDataFile -LiteralPath $overridePath
         }
         catch {
             Write-Warning "ITToolkit: ignoring settings file '$overridePath': $($_.Exception.Message)"

@@ -28,7 +28,7 @@ function Get-ITHubToolCatalog {
 
     $module = $ExecutionContext.SessionState.Module
     $tools = foreach ($tool in $script:ITHubTools) {
-        $help = Get-Help -Name $tool.Command -ErrorAction SilentlyContinue
+        $help = Microsoft.PowerShell.Core\Get-Help -Name $tool.Command -ErrorAction SilentlyContinue
         $parameters = foreach ($parameter in $tool.Parameters) {
             $rule = $script:ITHubRules[$parameter.Rule]
             $entry = [ordered]@{

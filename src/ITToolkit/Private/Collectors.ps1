@@ -183,7 +183,7 @@ $script:ITCollectors['DeviceHealth'] = {
         $hotFix = Get-HotFix -ErrorAction Stop |
             Where-Object { $_.InstalledOn } |
             Sort-Object -Property InstalledOn -Descending |
-            Select-Object -First 1
+            Microsoft.PowerShell.Utility\Select-Object -First 1
         if ($hotFix) {
             $data.LatestHotFix = [pscustomobject]@{
                 HotFixId    = $hotFix.HotFixID
@@ -526,7 +526,7 @@ $script:ITCollectors['TempFiles'] = {
                 $directory = $directories[$i]
                 try {
                     if ($directory.LastWriteTime -lt $cutoff -and $directory.CreationTime -lt $cutoff -and
-                        -not ($directory.EnumerateFileSystemInfos() | Select-Object -First 1)) {
+                        -not ($directory.EnumerateFileSystemInfos() | Microsoft.PowerShell.Utility\Select-Object -First 1)) {
                         $directory.Delete()
                         $foldersRemoved++
                     }
@@ -569,7 +569,7 @@ $script:ITCollectors['NetworkConfig'] = {
     }
     catch { $errors.Add("Adapters: $($_.Exception.Message)") }
 
-    $gateways = @($adapters | ForEach-Object { $_.Gateways } | Where-Object { $_ } | Select-Object -Unique)
+    $gateways = @($adapters | ForEach-Object { $_.Gateways } | Where-Object { $_ } | Microsoft.PowerShell.Utility\Select-Object -Unique)
     $gatewayResults = @(foreach ($gateway in $gateways) {
             $reply = $null
             $failure = $null
@@ -583,7 +583,7 @@ $script:ITCollectors['NetworkConfig'] = {
             }
         })
 
-    $hasResolveDnsName = [bool](Get-Command -Name Resolve-DnsName -ErrorAction SilentlyContinue)
+    $hasResolveDnsName = [bool](Microsoft.PowerShell.Core\Get-Command -Name Resolve-DnsName -ErrorAction SilentlyContinue)
     $dnsResults = @(foreach ($name in @($DnsNames | Where-Object { $_ })) {
             $timer = [System.Diagnostics.Stopwatch]::StartNew()
             try {
@@ -659,7 +659,7 @@ $script:ITCollectors['TcpTest'] = {
                 if ($lookup.AsyncWaitHandle.WaitOne($TimeoutMs)) {
                     $addresses = @([System.Net.Dns]::EndGetHostAddresses($lookup) |
                             Sort-Object -Property @{ Expression = { $_.AddressFamily -ne [System.Net.Sockets.AddressFamily]::InterNetwork } } |
-                            Select-Object -First 4)
+                            Microsoft.PowerShell.Utility\Select-Object -First 4)
                     if (-not $addresses.Count) { $detail = 'DNS lookup failed: no address for this name' }
                 }
                 else {

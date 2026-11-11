@@ -94,7 +94,7 @@ function Invoke-ITHubTool {
         $records = @($commandErrors | Where-Object { $_ })
         $own = @($records | Where-Object { $_.InvocationInfo -and $_.InvocationInfo.MyCommand -and $_.InvocationInfo.MyCommand.Name -eq $tool.Command })
         if ($own.Count -or @($objects | Where-Object { $null -ne $_ }).Count) { $records = $own }
-        else { $records = @($records | Select-Object -Last 1) }
+        else { $records = @($records | Microsoft.PowerShell.Utility\Select-Object -Last 1) }
         foreach ($item in $records) {
             if (-not $item) { continue }
             $message = [string]$item
@@ -106,7 +106,7 @@ function Invoke-ITHubTool {
         $maximum = [int](Get-ITSettings).ITHub.MaxResults
         if ($maximum -gt 0 -and $objects.Count -gt $maximum) {
             $warnings.Add("Showing the first $maximum of $($objects.Count) results.")
-            $objects = @($objects | Select-Object -First $maximum)
+            $objects = @($objects | Microsoft.PowerShell.Utility\Select-Object -First $maximum)
         }
 
         $envelope.results = @($objects | ForEach-Object { ConvertTo-ITHubResult -InputObject $_ })

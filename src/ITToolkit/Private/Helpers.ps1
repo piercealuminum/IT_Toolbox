@@ -104,9 +104,42 @@ function Get-ITFirstLine {
     )
 
     if (-not $Text) { return '' }
-    $line = (($Text -split "`r?`n") | Where-Object { $_.Trim() } | Select-Object -First 1)
+    $line = (($Text -split "`r?`n") | Where-Object { $_.Trim() } | Microsoft.PowerShell.Utility\Select-Object -First 1)
     if (-not $line) { return '' }
     $line = $line.Trim()
     if ($line.Length -gt $MaxLength) { $line = $line.Substring(0, $MaxLength - 3) + '...' }
     $line
+}
+
+function Test-ITCommand {
+    # True when a command is available. Module-qualified Get-Command, because a JEA session
+    # replaces Get-Command with a restricted version that module code would otherwise call.
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Name
+    )
+
+    [bool](Microsoft.PowerShell.Core\Get-Command -Name $Name -ErrorAction SilentlyContinue)
+}
+
+function Read-ITDataFile {
+    # Reads a .psd1 data file the way Import-PowerShellDataFile does (parse, then accept only
+    # constant values, so nothing in the file can run). Import-PowerShellDataFile itself is a
+    # script function in Windows PowerShell 5.1 that a JEA session does not load.
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$LiteralPath
+    )
+
+    $parseErrors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile($LiteralPath, [ref]$null, [ref]$parseErrors)
+    if (@($parseErrors).Count) { throw "$LiteralPath is not a valid data file: $($parseErrors[0].Message)" }
+    $table = $ast.Find({ param($node) $node -is [System.Management.Automation.Language.HashtableAst] }, $false)
+    if (-not $table) { throw "$LiteralPath does not contain a hashtable (@{ ... })." }
+    # SafeGetValue throws if the file contains anything other than constants.
+    $table.SafeGetValue()
 }

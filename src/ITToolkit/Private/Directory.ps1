@@ -15,7 +15,7 @@ function Assert-ITActiveDirectory {
     [CmdletBinding()]
     param()
 
-    if (-not (Get-Command -Name Get-ADUser -ErrorAction SilentlyContinue)) {
+    if (-not (Test-ITCommand -Name Get-ADUser)) {
         throw ('The ActiveDirectory module is not installed. On Windows 10 or 11 install it from an elevated window with: ' +
             'Add-WindowsCapability -Online -Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0')
     }
@@ -73,7 +73,7 @@ function Get-ITEntraUser {
     )
 
     $connectHint = 'Connect-MgGraph -Scopes User.Read.All, UserAuthenticationMethod.Read.All, AuditLog.Read.All'
-    if (-not (Get-Command -Name Get-MgContext -ErrorAction SilentlyContinue)) {
+    if (-not (Test-ITCommand -Name Get-MgContext)) {
         return [pscustomobject]@{ Available = $false; Reason = "Microsoft Graph PowerShell is not installed (Install-Module Microsoft.Graph.Users, Microsoft.Graph.Identity.SignIns -Scope CurrentUser), then $connectHint" }
     }
     if (-not (Get-MgContext)) {

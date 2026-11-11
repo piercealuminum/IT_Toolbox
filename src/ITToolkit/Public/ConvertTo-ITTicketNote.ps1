@@ -86,7 +86,7 @@ function ConvertTo-ITTicketNote {
                 $Title = 'User account check'
             }
             elseif ($isCheck) {
-                $categories = @($items | ForEach-Object { $_.Category } | Select-Object -Unique)
+                $categories = @($items | ForEach-Object { $_.Category } | Microsoft.PowerShell.Utility\Select-Object -Unique)
                 $Title = if ($categories.Count -eq 1 -and $categories[0] -eq 'Network') { 'Network test' } else { 'Device health check' }
             }
             elseif ($titles.ContainsKey($typeName)) { $Title = $titles[$typeName] }
@@ -116,14 +116,14 @@ function ConvertTo-ITTicketNote {
                 }
                 $lines.Add('')
                 $lines.Add('All checks:')
-                $table = $checks | Select-Object -Property Check, Status, Detail | Format-Table -AutoSize -Wrap | Out-String -Width $Width
+                $table = $checks | Microsoft.PowerShell.Utility\Select-Object -Property Check, Status, Detail | Format-Table -AutoSize -Wrap | Out-String -Width $Width
                 $lines.Add($table.Trim([char[]]"`r`n"))
             }
         }
         elseif ($typeName -eq 'ITToolkit.PasswordReset') {
             # Never put a password in a ticket.
             $lines.Add('')
-            $table = $items | Select-Object -Property UserName, DisplayName, MustChangeAtNextSignIn, Unlocked, DomainController |
+            $table = $items | Microsoft.PowerShell.Utility\Select-Object -Property UserName, DisplayName, MustChangeAtNextSignIn, Unlocked, DomainController |
                 Format-Table -AutoSize -Wrap | Out-String -Width $Width
             $lines.Add($table.Trim([char[]]"`r`n"))
             $lines.Add('The new password was given to the user directly and is not recorded here.')

@@ -69,7 +69,7 @@ function ConvertTo-ITHealthCheck {
     }
     $intune = @($Health.MdmEnrollments | Where-Object { $_ -and $_.ProviderID -eq 'MS DM Server' })
     if ($intune.Count) {
-        $upn = @($intune | Where-Object { $_.UPN } | ForEach-Object { $_.UPN }) | Select-Object -First 1
+        $upn = @($intune | Where-Object { $_.UPN } | ForEach-Object { $_.UPN }) | Microsoft.PowerShell.Utility\Select-Object -First 1
         if ($upn) { $join += "; Intune enrolled ($upn)" } else { $join += '; Intune enrolled' }
     }
     elseif ($entraJoined) {
@@ -325,7 +325,7 @@ function ConvertTo-ITNetworkCheck {
     foreach ($lookup in @($Config.Dns | Where-Object { $_ })) {
         if ($lookup.Success) {
             $addresses = @($lookup.Addresses)
-            $shown = ($addresses | Select-Object -First 3) -join ', '
+            $shown = ($addresses | Microsoft.PowerShell.Utility\Select-Object -First 3) -join ', '
             if ($addresses.Count -gt 3) { $shown += ", +$($addresses.Count - 3) more" }
             Add-Check "DNS $($lookup.Name)" 'OK' "Resolved to $shown in $($lookup.ElapsedMs) ms"
         }

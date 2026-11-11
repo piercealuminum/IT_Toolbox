@@ -37,7 +37,7 @@ function Get-ITToolkitCommand {
 
     # ExportedFunctions, not Get-Command -Module: inside the module Get-Command also sees private helpers.
     foreach ($command in @($module.ExportedFunctions.Values | Where-Object { $_.Name -like $Name } | Sort-Object -Property Name)) {
-        $help = Get-Help -Name $command.Name -Full -ErrorAction SilentlyContinue
+        $help = Microsoft.PowerShell.Core\Get-Help -Name $command.Name -Full -ErrorAction SilentlyContinue
         $examples = @(foreach ($example in @($help.examples.example)) {
                 if (-not $example) { continue }
                 $remarks = (@($example.remarks | ForEach-Object { $_.Text }) -join ' ').Trim()
@@ -48,7 +48,7 @@ function Get-ITToolkitCommand {
             })
         $parameters = @(foreach ($parameter in $command.Parameters.Values) {
                 if ($commonParameters -contains $parameter.Name) { continue }
-                $parameterHelp = @($help.parameters.parameter | Where-Object { $_.name -eq $parameter.Name }) | Select-Object -First 1
+                $parameterHelp = @($help.parameters.parameter | Where-Object { $_.name -eq $parameter.Name }) | Microsoft.PowerShell.Utility\Select-Object -First 1
                 $description = ''
                 if ($parameterHelp -and $parameterHelp.description) {
                     $description = (@($parameterHelp.description | ForEach-Object { $_.Text }) -join ' ').Trim()
