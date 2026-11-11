@@ -143,7 +143,9 @@ Setting it up on the ITHub server (once):
    ```powershell
    & "$env:ProgramFiles\WindowsPowerShell\Modules\ITToolkit\1.2.0\ITHub\Install-ITHubEndpoint.ps1" -ITHubAccount CORP\svc-ithub -GmsaAccount 'CORP\svc-ittoolkit$'
    ```
-   This also copies the client script to `C:\Program Files\ITToolkit\Invoke-ITHubRequest.ps1`.
+   This also puts the endpoint's role into a small `ITToolkitJEA` module (JEA does not look
+   inside version folders), and copies the client script to
+   `C:\Program Files\ITToolkit\Invoke-ITHubRequest.ps1`.
 5. **Point ITHub at it:** set `TOOLS_RUNNER_PATH` in ITHub's `.env` to that path.
 6. **Optional, for the Entra ID part of user checks:** register an Entra app with the
    Microsoft Graph application permissions `User.Read.All`, `UserAuthenticationMethod.Read.All`

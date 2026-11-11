@@ -370,9 +370,6 @@ Describe 'Sample envelopes for ITHub (docs/ithub/samples)' {
             [pscustomobject]@{ PSTypeName = 'ITToolkit.Lockout'; TimeCreated = [datetime]::SpecifyKind([datetime]'2026-11-10 13:41:07', [DateTimeKind]::Utc); UserName = 'jlee'; CallerComputer = 'PC0177'; DomainController = 'DC01.corp.example.com'; Note = $null }
             [pscustomobject]@{ PSTypeName = 'ITToolkit.Lockout'; TimeCreated = [datetime]::SpecifyKind([datetime]'2026-11-10 12:10:44', [DateTimeKind]::Utc); UserName = 'jlee'; CallerComputer = ''; DomainController = 'DC01.corp.example.com'; Note = 'No caller computer recorded. Usually a phone, VPN, Outlook on the web or another network service with an old password' }
         }
-        Mock -ModuleName ITToolkit Open-ITTarget -ParameterFilter { $ComputerName -eq 'PC0999' } {
-            throw 'Could not connect with PowerShell remoting. Check that the computer is on, WinRM is enabled (Enable-PSRemoting) and you are an administrator on it. Details: WinRM cannot complete the operation. Verify that the specified computer name is valid.'
-        }
 
         function Use-FixedTimes([string]$Json) {
             # Samples get fixed timestamps so they only change when the envelope does.
@@ -388,10 +385,17 @@ Describe 'Sample envelopes for ITHub (docs/ithub/samples)' {
             'user-status'        = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"user-status","parameters":{"identity":"jlee"},"requestedBy":"Jordan Lee"}')
             'lockout-source'     = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"lockout-source","parameters":{"identity":"jlee"},"requestedBy":"Jordan Lee"}')
             'port-test'          = Use-FixedTimes ((Invoke-ITHubTool -RequestJson ('{{"tool":"port-test","parameters":{{"host":"127.0.0.1","ports":[{0},1]}},"requestedBy":"Jordan Lee"}}' -f $openPort)) -replace [regex]::Escape([string]$openPort), '8443' -replace '"source":"[^"]+"', '"source":"ITHUB01"' -replace '"latencyMs":\d+', '"latencyMs":2')
-            'failed-unreachable' = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"local-admins","parameters":{"computerName":"PC0999"},"requestedBy":"Jordan Lee"}')
+            'failed-unreachable' = $null
             'failed-validation'  = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"device-health","parameters":{"computerName":"PC0142; whoami"},"requestedBy":"Jordan Lee"}')
         }
         $listener.Stop()
+
+        # Mocked only now, after the real port test above, so that test never depends on how
+        # a Pester version treats calls a filtered mock does not match.
+        Mock -ModuleName ITToolkit Open-ITTarget {
+            throw 'Could not connect with PowerShell remoting. Check that the computer is on, WinRM is enabled (Enable-PSRemoting) and you are an administrator on it. Details: WinRM cannot complete the operation. Verify that the specified computer name is valid.'
+        }
+        $samples['failed-unreachable'] = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"local-admins","parameters":{"computerName":"PC0999"},"requestedBy":"Jordan Lee"}')
 
         if ($env:ITTOOLKIT_WRITE_SAMPLES -eq '1') {
             New-Item -ItemType Directory -Path $SampleFolder -Force | Out-Null

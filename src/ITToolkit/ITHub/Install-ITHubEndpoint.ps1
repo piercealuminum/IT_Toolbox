@@ -6,7 +6,9 @@ Registers or updates the ITToolkit JEA endpoint that ITHub calls, and puts the c
 Run on the ITHub server, in an elevated Windows PowerShell 5.1 window, after installing
 ITToolkit for all users (Install-ITToolkit.ps1). It:
 
-  1. checks ITToolkit is installed for all users with its RoleCapabilities\ITHubTools.psrc
+  1. checks ITToolkit is installed for all users, and puts its JEA role (ITHubTools.psrc) in
+     a small unversioned module, ITToolkitJEA, because JEA does not look for roles inside a
+     module's version folder
   2. creates the transcript folder, readable and writable by administrators, SYSTEM and the gMSA only
   3. writes the session configuration (C:\ProgramData\ITToolkit\<Name>.pssc):
      restricted session, runs as the gMSA, only the ITHub account may connect, and only to
@@ -78,6 +80,19 @@ if (-not $module.ModuleBase.StartsWith($programFiles, [System.StringComparison]:
 $roleCapability = Join-Path $module.ModuleBase 'RoleCapabilities\ITHubTools.psrc'
 if (-not (Test-Path -LiteralPath $roleCapability)) { throw "ITToolkit $($module.Version) has no RoleCapabilities\ITHubTools.psrc. Install version 1.2.0 or later." }
 Write-Host "Using ITToolkit $($module.Version) from $($module.ModuleBase)"
+
+# JEA finds a role only in <module path>\<module>\RoleCapabilities, never inside a version
+# folder such as ITToolkit\1.2.0, so the role goes into its own unversioned module.
+$roleModule = Join-Path $programFiles 'WindowsPowerShell\Modules\ITToolkitJEA'
+if ($PSCmdlet.ShouldProcess($roleModule, 'Install the ITHubTools JEA role')) {
+    New-Item -ItemType Directory -Path (Join-Path $roleModule 'RoleCapabilities') -Force | Out-Null
+    $roleManifest = Join-Path $roleModule 'ITToolkitJEA.psd1'
+    if (-not (Test-Path -LiteralPath $roleManifest)) {
+        New-ModuleManifest -Path $roleManifest -ModuleVersion '1.0.0' -Author 'IT Department' -Description 'Holds the ITHubTools JEA role for the ITToolkit endpoint. Install-ITHubEndpoint.ps1 keeps it current.'
+    }
+    Copy-Item -LiteralPath $roleCapability -Destination (Join-Path $roleModule 'RoleCapabilities\ITHubTools.psrc') -Force
+    Write-Host "JEA role: $roleModule\RoleCapabilities\ITHubTools.psrc"
+}
 
 if ($PSCmdlet.ParameterSetName -eq 'Gmsa') {
     $gmsaName = $GmsaAccount.TrimEnd('$')
