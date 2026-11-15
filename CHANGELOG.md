@@ -13,6 +13,9 @@
 - Change tools run through ITHub with `-Confirm:$false`: ITHub asks the tech first.
 - Fixed: a result property or request parameter named `Keys` was mistaken for the list of
   keys while building or checking JSON.
+- Fixed: an ITHub run that found nothing (nobody signed in, nothing to clean) could be
+  reported as failed with an unrelated error that had been silenced along the way. Only a
+  tool's own errors now fail a run.
 
 ## 1.2.0
 

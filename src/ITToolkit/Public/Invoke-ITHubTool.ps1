@@ -88,15 +88,11 @@ function Invoke-ITHubTool {
             $errors.Add($_.Exception.Message)
         }
         foreach ($item in @($commandWarnings)) { if ($item) { $warnings.Add([string]$item.Message) } }
-        # -ErrorVariable also collects errors that the command (or a collector) caught and
-        # handled: the raw WinRM failure behind "PC0142: Could not connect ...", or a refused
-        # port that is itself a result. Report only the command's own errors, which say which
-        # computer or user failed. Only when there are no results and no own errors is
-        # anything else shown, so a failure is never silent.
-        $records = @($commandErrors | Where-Object { $_ })
-        $own = @($records | Where-Object { $_.InvocationInfo -and $_.InvocationInfo.MyCommand -and $_.InvocationInfo.MyCommand.Name -eq $tool.Command })
-        if ($own.Count -or @($objects | Where-Object { $null -ne $_ }).Count) { $records = $own }
-        else { $records = @($records | Microsoft.PowerShell.Utility\Select-Object -Last 1) }
+        # -ErrorVariable also collects errors that were caught or silenced on the way: the raw
+        # WinRM failure behind "PC0142: Could not connect ...", a refused port that is itself a
+        # result, a probe for a module that is not loaded yet. Only the command's own errors
+        # (which name the computer or user) count; a run that finds nothing is not a failure.
+        $records = @($commandErrors | Where-Object { $_ -and $_.InvocationInfo -and $_.InvocationInfo.MyCommand -and $_.InvocationInfo.MyCommand.Name -eq $tool.Command })
         foreach ($item in $records) {
             if (-not $item) { continue }
             $message = [string]$item

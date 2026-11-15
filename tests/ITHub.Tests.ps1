@@ -179,6 +179,18 @@ Describe 'Invoke-ITHubTool' {
         $envelope.ticketNote | Should -BeNullOrEmpty
     }
 
+    It 'reports a run that finds nothing as completed, ignoring errors silenced along the way' {
+        Mock -ModuleName ITToolkit Get-ITLoggedOnUser {
+            # Like a module probe or a caught collector error: recorded, but not a failure.
+            $null = Microsoft.PowerShell.Core\Get-Command -Name 'Not-A-RealCommand' -ErrorAction SilentlyContinue
+            try { throw 'handled inside the command' } catch { $null = $_ }
+        }
+        $envelope = Invoke-Hub @{ tool = 'signed-in-users'; parameters = @{ computerName = 'PC0142' } }
+        $envelope.status | Should -Be 'completed'
+        @($envelope.results).Count | Should -Be 0
+        @($envelope.errors).Count | Should -Be 0
+    }
+
     It 'passes warnings through' {
         Mock -ModuleName ITToolkit Get-ITEventSummary { Write-Warning 'PC0142: could not read hardware errors (WHEA): Access is denied' }
         $envelope = Invoke-Hub @{ tool = 'event-summary'; parameters = @{ computerName = 'PC0142'; hours = 4 } }
