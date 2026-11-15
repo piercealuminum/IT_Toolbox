@@ -67,6 +67,8 @@ function ConvertTo-ITTicketNote {
             'ITToolkit.TempCleanup'   = 'Temp file cleanup'
             'ITToolkit.Lockout'       = 'Account lockout source'
             'ITToolkit.PasswordReset' = 'Password reset'
+            'ITToolkit.UserAccount'   = 'User account'
+            'ITToolkit.TempScan'      = 'Temp file cleanup preview'
         }
     }
 

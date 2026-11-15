@@ -58,6 +58,9 @@
         GraphCertificateThumbprint = ''
         # Most result rows returned to ITHub per run.
         MaxResults                 = 2000
+        # Tool ids refused at the endpoint whatever ITHub allows, for example
+        # @('account-unlock') until the gMSA has unlock rights.
+        DisabledTools              = @()
     }
     Passphrase   = @{
         WordCount = 4

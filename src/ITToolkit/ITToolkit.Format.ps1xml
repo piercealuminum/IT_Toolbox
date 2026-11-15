@@ -383,5 +383,57 @@
       </ListControl>
     </View>
 
+    <View>
+      <Name>ITToolkit.UserAccount</Name>
+      <ViewSelectedBy><TypeName>ITToolkit.UserAccount</TypeName></ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>State</Label><Width>7</Width></TableColumnHeader>
+          <TableColumnHeader><Label>UserName</Label><Width>16</Width></TableColumnHeader>
+          <TableColumnHeader><Label>DisplayName</Label><Width>22</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Enabled</Label><Width>7</Width></TableColumnHeader>
+          <TableColumnHeader><Label>LockedOut</Label><Width>9</Width></TableColumnHeader>
+          <TableColumnHeader><Label>BadPw</Label><Width>5</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>PasswordExpires</Label></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem><PropertyName>State</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>UserName</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>DisplayName</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Enabled</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>LockedOut</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>BadPasswordCount</PropertyName></TableColumnItem>
+              <TableColumnItem><ScriptBlock>if ($_.MustChangePassword) { 'must change now' } elseif ($_.PasswordNeverExpires) { 'never' } elseif ($_.PasswordExpires) { ([datetime]$_.PasswordExpires).ToString('yyyy-MM-dd HH:mm') }</ScriptBlock></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+
+    <View>
+      <Name>ITToolkit.TempScan</Name>
+      <ViewSelectedBy><TypeName>ITToolkit.TempScan</TypeName></ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader><Label>ComputerName</Label><Width>18</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Path</Label><Width>48</Width></TableColumnHeader>
+          <TableColumnHeader><Label>Files</Label><Width>8</Width><Alignment>Right</Alignment></TableColumnHeader>
+          <TableColumnHeader><Label>Size</Label><Width>10</Width><Alignment>Right</Alignment></TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <TableColumnItems>
+              <TableColumnItem><PropertyName>ComputerName</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Path</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Files</PropertyName></TableColumnItem>
+              <TableColumnItem><PropertyName>Size</PropertyName></TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+
   </ViewDefinitions>
 </Configuration>

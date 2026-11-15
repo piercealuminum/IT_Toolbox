@@ -22,6 +22,8 @@ keyboard to find out what is wrong. It complements ITHub rather than duplicating
 | `Clear-ITTempFile` | Free disk space by removing old temp files (supports `-WhatIf`) | **Yes** |
 | `Get-ITUserStatus` | Why can't this user sign in? AD enabled, locked out, password expiry; Entra ID sync, sign-in block, licenses, MFA methods | No |
 | `Get-ITLockoutSource` | Which computer keeps locking this account? | No |
+| `Get-ITUserAccount` | The same account facts as plain fields (locked out, expiry dates), for scripts and ITHub | No |
+| `Unlock-ITUser` | Unlock a locked-out account and show it before and after (supports `-WhatIf`) | **Yes** |
 | `Reset-ITUserPassword` | Reset to a readable passphrase, require a change, unlock (asks first, supports `-WhatIf`) | **Yes** |
 | `New-ITPassphrase` | A temporary password that is easy to read out over the phone | No |
 | `ConvertTo-ITTicketNote` | Turn any result into a note for the ticket | No |
@@ -155,6 +157,26 @@ Setting it up on the ITHub server (once):
 
 After each ITToolkit update, run step 3 and then step 4 again.
 
+**Phase 2 tools** (`user-lookup`, `account-unlock`, `temp-cleanup`). The lookup and the
+cleanup need nothing more: the cleanup uses the gMSA's local admin rights on workstations.
+Unlocking needs the gMSA to be allowed to read and write `lockoutTime` on user accounts. As a
+Domain Admin, run this for each OU that holds user accounts:
+
+```powershell
+dsacls "OU=Users,DC=pierce,DC=local" /I:S /G "PIERCE\svc-ittoolkit$:RPWP;lockoutTime;user"
+```
+
+You can also use *Delegate Control* in Active Directory Users and Computers: create a custom
+task for User objects, with the properties *Read lockoutTime* and *Write lockoutTime*.
+Administrator accounts (protected by AdminSDHolder) stay out of reach, which is intended.
+
+To switch a tool off at the endpoint whatever ITHub allows, for example until the unlock
+rights are in place, list it in `C:\ProgramData\ITToolkit\Settings.psd1`:
+
+```powershell
+@{ ITHub = @{ DisabledTools = @('account-unlock') } }
+```
+
 To check it works, sign in as the ITHub service account and run:
 ```powershell
 '{"action":"catalog"}' | powershell.exe -NoProfile -File "C:\Program Files\ITToolkit\Invoke-ITHubRequest.ps1"
@@ -208,7 +230,7 @@ Intune so every tech uses the same values.
 
 ## Safety
 
-- Everything except `Clear-ITTempFile` and `Reset-ITUserPassword` is read-only.
+- Everything except `Clear-ITTempFile`, `Unlock-ITUser` and `Reset-ITUserPassword` is read-only.
   `Reset-ITUserPassword` asks before every reset unless you add `-Confirm:$false`.
 - `Clear-ITTempFile` only touches `C:\Windows\Temp` and each profile's `AppData\Local\Temp`,
   and only removes files created and last changed more than 7 days ago (configurable).

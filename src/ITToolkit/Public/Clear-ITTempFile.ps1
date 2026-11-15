@@ -14,8 +14,9 @@ function Clear-ITTempFile {
     Files extracted from archives keep old timestamps, so a file must be both created and
     last changed before the cutoff to be removed.
 
-    Run with -WhatIf first to see how much would be freed in each folder. With -Confirm you
-    are asked before each folder.
+    Run with -Preview (or -WhatIf) first to see how much would be freed in each folder.
+    -Preview returns that as results (ITToolkit.TempScan), so scripts and ITHub can show it
+    and ask before cleaning. With -Confirm you are asked before each folder.
 
     This is the only ITToolkit command that changes a computer.
 
@@ -28,8 +29,12 @@ function Clear-ITTempFile {
     .PARAMETER Credential
     Credential for remote computers. Not used for this computer.
 
+    .PARAMETER Preview
+    Deletes nothing: returns, for each temp folder with old files, how many there are and
+    how much space they use.
+
     .EXAMPLE
-    Clear-ITTempFile -ComputerName PC0142 -WhatIf
+    Clear-ITTempFile -ComputerName PC0142 -Preview
 
     Shows how many files and how much space each temp folder would free, without deleting anything.
 
@@ -42,7 +47,7 @@ function Clear-ITTempFile {
     Asks before cleaning each temp folder on this computer.
 
     .OUTPUTS
-    ITToolkit.TempCleanup
+    ITToolkit.TempCleanup, or ITToolkit.TempScan with -Preview.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param(
@@ -55,7 +60,9 @@ function Clear-ITTempFile {
 
         [System.Management.Automation.PSCredential]
         [System.Management.Automation.Credential()]
-        $Credential = [System.Management.Automation.PSCredential]::Empty
+        $Credential = [System.Management.Automation.PSCredential]::Empty,
+
+        [switch]$Preview
     )
 
     begin {
@@ -73,6 +80,26 @@ function Clear-ITTempFile {
                 # Pass 1 measures; pass 2 deletes only in the folders approved here, so -WhatIf
                 # and -Confirm work the same for remote computers.
                 $scan = @(Invoke-ITCollector -Name 'TempFiles' -Target $target -ArgumentList @($null, $OlderThanDays, $false))
+                if ($Preview) {
+                    foreach ($folder in $scan) {
+                        if ($folder.Skipped) {
+                            Write-Warning "$($target.ComputerName): skipped $($folder.Path): $($folder.Skipped)"
+                            continue
+                        }
+                        if ($folder.Files -lt 1) { continue }
+                        [pscustomobject]@{
+                            PSTypeName    = 'ITToolkit.TempScan'
+                            ComputerName  = $target.ComputerName
+                            Path          = $folder.Path
+                            Files         = $folder.Files
+                            Size          = Format-ITBytes $folder.Bytes
+                            Bytes         = [int64]$folder.Bytes
+                            Unreadable    = $folder.Failed
+                            OlderThanDays = $OlderThanDays
+                        }
+                    }
+                    continue
+                }
                 $approved = New-Object System.Collections.Generic.List[string]
                 foreach ($folder in $scan) {
                     if ($folder.Skipped) {

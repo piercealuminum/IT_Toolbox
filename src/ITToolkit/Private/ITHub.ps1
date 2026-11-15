@@ -17,9 +17,14 @@ $script:ITHubRules = @{
     hostPorts    = @{ Type = 'string[]'; Pattern = '^[A-Za-z0-9][A-Za-z0-9.-]{0,252}:[0-9]{1,5}$'; MaxItems = 10 }
     softwareName = @{ Type = 'string'; Pattern = '^[A-Za-z0-9 .*_()+&,-]{1,100}$' }
     portPreset   = @{ Type = 'enum'; Values = @('DomainController', 'Email', 'Printer', 'RDP', 'SMB', 'SQL', 'SSH', 'Web', 'WinRM') }
+    days         = @{ Type = 'integer'; Minimum = 1; Maximum = 365 }
+    flag         = @{ Type = 'boolean' }
 }
 
-# Phase 1 tools: read-only. Phase 2 and 3 tools are added here when their gates pass.
+# Kind: read (changes nothing, the default), change (changes a computer or account) or
+# reset (a password reset, phase 3). Phase 1 tools are read-only; phase 2 adds a lookup and
+# the first two change tools. An organization can switch any tool off at the endpoint with
+# the ITHub.DisabledTools setting, whatever ITHub allows.
 $script:ITHubTools = @(
     @{
         Id = 'device-health'; Title = 'Device health'; Command = 'Get-ITDeviceHealth'; Target = 'computer'; Permission = 'tools.run'; Phase = 1; ResultType = 'ITToolkit.CheckResult'
@@ -78,7 +83,44 @@ $script:ITHubTools = @(
             @{ Name = 'hours'; Bind = 'Hours'; Rule = 'hours'; Required = $false; Default = 24; Description = 'How many hours back to look' }
         )
     }
+    @{
+        Id = 'user-lookup'; Title = 'User account lookup'; Command = 'Get-ITUserAccount'; Target = 'user'; Permission = 'tools.run'; Phase = 2; ResultType = 'ITToolkit.UserAccount'
+        Parameters = @(@{ Name = 'identity'; Bind = 'Identity'; Rule = 'identity'; Required = $true; Description = 'Account name, UPN or email address' })
+    }
+    @{
+        Id = 'account-unlock'; Title = 'Unlock account'; Command = 'Unlock-ITUser'; Target = 'user'; Permission = 'tools.change'; Phase = 2; Kind = 'change'; ResultType = 'ITToolkit.UserAccount'
+        Parameters = @(@{ Name = 'identity'; Bind = 'Identity'; Rule = 'identity'; Required = $true; Description = 'Account name, UPN or email address' })
+    }
+    @{
+        Id = 'temp-cleanup'; Title = 'Temp file cleanup'; Command = 'Clear-ITTempFile'; Target = 'computer'; Permission = 'tools.change'; Phase = 2; Kind = 'change'; ResultType = 'ITToolkit.TempCleanup'; PreviewResultType = 'ITToolkit.TempScan'
+        Parameters = @(
+            @{ Name = 'computerName'; Bind = 'ComputerName'; Rule = 'computerName'; Required = $true; Description = 'Computer to clean' }
+            @{ Name = 'olderThanDays'; Bind = 'OlderThanDays'; Rule = 'days'; Required = $false; Description = 'Only files not changed for this many days; default from the toolkit settings (7)' }
+            @{ Name = 'preview'; Bind = 'Preview'; Rule = 'flag'; Required = $false; Default = $false; Description = 'true: delete nothing, return what would be freed per folder' }
+        )
+    }
 )
+
+function Get-ITHubToolKind {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)]
+        [hashtable]$Tool
+    )
+
+    if ($Tool.ContainsKey('Kind')) { return $Tool.Kind }
+    return 'read'
+}
+
+function Get-ITHubDisabledTool {
+    # Tool ids the organization switched off at the endpoint (ITHub.DisabledTools setting).
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param()
+
+    [string[]]@((Get-ITSettings).ITHub.DisabledTools | Where-Object { $_ })
+}
 
 function Get-ITHubToolDefinition {
     [CmdletBinding()]
@@ -87,8 +129,12 @@ function Get-ITHubToolDefinition {
         [string]$Id
     )
 
+    $disabled = Get-ITHubDisabledTool
     foreach ($tool in $script:ITHubTools) {
-        if ($tool.Id -ceq $Id) { return $tool }
+        if ($tool.Id -ceq $Id) {
+            if ($disabled -ccontains $Id) { return $null }
+            return $tool
+        }
     }
     return $null
 }
@@ -115,6 +161,9 @@ function Test-ITHubValue {
         }
         'enum' {
             if ($Value -isnot [string] -or $Rule.Values -cnotcontains $Value) { return "$Name must be one of: $($Rule.Values -join ', ')" }
+        }
+        'boolean' {
+            if ($Value -isnot [bool]) { return "$Name must be true or false" }
         }
         'integer' {
             if (-not ($Value -is [int] -or $Value -is [long])) { return "$Name must be a whole number" }
@@ -162,7 +211,10 @@ function Resolve-ITHubRequest {
     $toolId = $request.tool
     if ($toolId -isnot [string] -or -not $toolId) { throw 'The request needs a tool.' }
     $tool = Get-ITHubToolDefinition -Id $toolId
-    if (-not $tool) { throw "Unknown tool '$toolId'." }
+    if (-not $tool) {
+        if ((Get-ITHubDisabledTool) -ccontains $toolId) { throw "Tool '$toolId' is switched off on this server (ITHub.DisabledTools setting)." }
+        throw "Unknown tool '$toolId'."
+    }
 
     $requestedBy = $null
     if ($null -ne $request.requestedBy) {
@@ -178,7 +230,8 @@ function Resolve-ITHubRequest {
 
     $problems = New-Object System.Collections.Generic.List[string]
     $known = @($tool.Parameters | ForEach-Object { $_.Name })
-    foreach ($name in $given.Keys) {
+    # get_Keys(), not .Keys: a parameter named "keys" would otherwise stand in for the key list.
+    foreach ($name in @($given.get_Keys())) {
         if ($known -cnotcontains $name) { $problems.Add("Unknown parameter '$name' for $toolId.") }
     }
 
@@ -202,6 +255,7 @@ function Resolve-ITHubRequest {
         if ($rule.Type -eq 'integer[]') { $bound[$parameter.Bind] = [int[]]@($value) }
         elseif ($rule.Type -eq 'string[]') { $bound[$parameter.Bind] = [string[]]@($value) }
         elseif ($rule.Type -eq 'integer') { $bound[$parameter.Bind] = [int]$value }
+        elseif ($rule.Type -eq 'boolean') { $bound[$parameter.Bind] = [bool]$value }
         else { $bound[$parameter.Bind] = [string]$value }
     }
 
@@ -253,7 +307,7 @@ function ConvertTo-ITHubValue {
     if ($Depth -ge 4) { return [string]$Value }
     if ($Value -is [System.Collections.IDictionary]) {
         $map = [ordered]@{}
-        foreach ($key in $Value.Keys) { $map[(ConvertTo-ITHubName -Name ([string]$key))] = ConvertTo-ITHubValue -Value $Value[$key] -Depth ($Depth + 1) }
+        foreach ($key in @($Value.get_Keys())) { $map[(ConvertTo-ITHubName -Name ([string]$key))] = ConvertTo-ITHubValue -Value $Value[$key] -Depth ($Depth + 1) }
         return $map
     }
     if ($Value -is [System.Collections.IEnumerable]) {
@@ -280,7 +334,8 @@ function ConvertTo-ITHubResult {
     $row = [ordered]@{ type = [string]$InputObject.PSObject.TypeNames[0] }
     $converted = ConvertTo-ITHubValue -Value $InputObject
     if ($converted -is [System.Collections.IDictionary]) {
-        foreach ($key in $converted.Keys) { $row[$key] = $converted[$key] }
+        # get_Keys(), not .Keys: a result property named Keys would otherwise stand in for the key list.
+        foreach ($key in @($converted.get_Keys())) { $row[$key] = $converted[$key] }
     }
     else {
         $row['value'] = $converted

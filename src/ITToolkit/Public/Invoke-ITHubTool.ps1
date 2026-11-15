@@ -77,6 +77,8 @@ function Invoke-ITHubTool {
         }
 
         $bound = $request.Bound
+        # ITHub has already asked the tech to confirm, and nobody can answer a prompt here.
+        if ((Get-ITHubToolKind -Tool $tool) -ne 'read') { $bound['Confirm'] = $false }
         $commandWarnings = @()
         $commandErrors = @()
         try {
@@ -119,7 +121,7 @@ function Invoke-ITHubTool {
                 info = @($checks | Where-Object { $_.Status -eq 'Info' }).Count
             }
         }
-        if ($objects.Count -and $tool.Id -ne 'password-reset') {
+        if ($objects.Count -and (Get-ITHubToolKind -Tool $tool) -ne 'reset') {
             $noteParameters = @{ Width = 200 }
             if ($request.RequestedBy) { $noteParameters.CollectedBy = $request.RequestedBy }
             $envelope.ticketNote = $objects | ConvertTo-ITTicketNote @noteParameters

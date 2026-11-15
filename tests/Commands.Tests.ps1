@@ -406,3 +406,28 @@ Describe 'Invoke-ITCollector' {
         }
     }
 }
+
+Describe 'Clear-ITTempFile -Preview' {
+    BeforeEach {
+        Mock -ModuleName ITToolkit Invoke-ITCollector -ParameterFilter { $Name -eq 'TempFiles' } {
+            [pscustomobject]@{ Path = 'C:\Windows\Temp'; Files = 12; Bytes = [int64]5242880; Failed = 0; FoldersRemoved = 0; Skipped = $null }
+            [pscustomobject]@{ Path = 'C:\Users\empty\AppData\Local\Temp'; Files = 0; Bytes = [int64]0; Failed = 0; FoldersRemoved = 0; Skipped = $null }
+            [pscustomobject]@{ Path = 'C:\Users\odd\AppData\Local\Temp'; Files = 0; Bytes = [int64]0; Failed = 0; FoldersRemoved = 0; Skipped = 'C:\Users\odd\AppData\Local\Temp is a link or junction, so this folder was not touched' }
+        }
+    }
+
+    It 'returns what would be freed, warns about skipped folders, and deletes nothing' {
+        $warnings = @()
+        $rows = @(Clear-ITTempFile -Preview -WarningVariable warnings -WarningAction SilentlyContinue)
+        $rows.Count | Should -Be 1
+        $rows[0].PSObject.TypeNames[0] | Should -Be 'ITToolkit.TempScan'
+        $rows[0].Path | Should -Be 'C:\Windows\Temp'
+        $rows[0].Files | Should -Be 12
+        $rows[0].Size | Should -Be '5.0 MB'
+        $rows[0].OlderThanDays | Should -Be 7
+        @($warnings | Where-Object { "$_" -match 'link or junction' }).Count | Should -Be 1
+        # Only the measuring pass ran; the deleting pass ($Delete = $true) never did.
+        Should -Invoke -ModuleName ITToolkit Invoke-ITCollector -Times 1 -Exactly -ParameterFilter { $Name -eq 'TempFiles' -and -not $ArgumentList[2] }
+        Should -Invoke -ModuleName ITToolkit Invoke-ITCollector -Times 0 -Exactly -ParameterFilter { $Name -eq 'TempFiles' -and $ArgumentList[2] }
+    }
+}

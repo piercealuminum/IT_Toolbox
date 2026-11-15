@@ -437,3 +437,91 @@ Describe 'Get-ITLockoutSource' {
         @($warnings | Where-Object { "$_" -match 'Access is denied' }).Count | Should -Be 1
     }
 }
+
+Describe 'ConvertTo-ITUserAccount' {
+    It 'gives plain fields for <Case>' -ForEach @(
+        @{ Case = 'a healthy account'; Change = {}; Locked = $false; MustChange = $false; Expires = $true }
+        @{ Case = 'a locked account'; Change = { param($u) $u.LockedOut = $true; $u.AccountLockoutTime = (Get-Date).AddMinutes(-5); $u.BadLogonCount = 5 }; Locked = $true; MustChange = $false; Expires = $true }
+        @{ Case = 'a password that must change'; Change = { param($u) $u.PasswordLastSet = $null; $u.'msDS-UserPasswordExpiryTimeComputed' = 0 }; Locked = $false; MustChange = $true; Expires = $false }
+        @{ Case = 'a password that never expires'; Change = { param($u) $u.PasswordNeverExpires = $true; $u.'msDS-UserPasswordExpiryTimeComputed' = [int64]::MaxValue }; Locked = $false; MustChange = $false; Expires = $false }
+    ) {
+        $user = New-TestADUser
+        & $Change $user
+        $row = InModuleScope ITToolkit -Parameters @{ User = $user } { param($User) ConvertTo-ITUserAccount -User $User -Server 'DC01.corp.example.com' }
+        $row.PSObject.TypeNames[0] | Should -Be 'ITToolkit.UserAccount'
+        $row.UserName | Should -Be 'jlee'
+        $row.DisplayName | Should -Be 'Jordan Lee'
+        $row.Location | Should -Be 'corp.example.com/Users/Sales'
+        $row.LockedOut | Should -Be $Locked
+        $row.MustChangePassword | Should -Be $MustChange
+        ($null -ne $row.PasswordExpires) | Should -Be $Expires
+        if ($Locked) { $row.LockoutTime | Should -Not -BeNullOrEmpty; $row.BadPasswordCount | Should -Be 5 } else { $row.LockoutTime | Should -BeNullOrEmpty }
+        $row.State | Should -Be 'Current'
+        $row.DomainController | Should -Be 'DC01.corp.example.com'
+    }
+}
+
+Describe 'Get-ITUserAccount' {
+    BeforeEach {
+        InModuleScope ITToolkit { $script:ITPdcEmulator = $null }
+        Mock -ModuleName ITToolkit Get-ADDomain { [pscustomobject]@{ PDCEmulator = 'DC01.corp.example.com' } }
+        Mock -ModuleName ITToolkit Get-ADUser { New-TestADUser }
+    }
+
+    It 'reads the account from the PDC emulator' {
+        $row = Get-ITUserAccount jlee
+        $row.UserName | Should -Be 'jlee'
+        Should -Invoke -ModuleName ITToolkit Get-ADUser -Times 1 -Exactly -ParameterFilter { $Server -eq 'DC01.corp.example.com' }
+    }
+}
+
+Describe 'Unlock-ITUser' {
+    BeforeEach {
+        InModuleScope ITToolkit { $script:ITPdcEmulator = $null }
+        Mock -ModuleName ITToolkit Get-ADDomain { [pscustomobject]@{ PDCEmulator = 'DC01.corp.example.com' } }
+        $script:reads = 0
+        # Locked on the first read, unlocked on the read after the unlock.
+        Mock -ModuleName ITToolkit Get-ADUser {
+            $script:reads++
+            $user = New-TestADUser
+            if ($script:reads -eq 1) { $user.LockedOut = $true; $user.AccountLockoutTime = (Get-Date).AddMinutes(-5); $user.BadLogonCount = 5 }
+            $user
+        }
+        Mock -ModuleName ITToolkit Unlock-ADAccount { }
+    }
+
+    It 'changes nothing with -WhatIf' {
+        Unlock-ITUser jlee -WhatIf | Should -BeNullOrEmpty
+        Should -Invoke -ModuleName ITToolkit Unlock-ADAccount -Times 0 -Exactly
+    }
+
+    It 'unlocks on the PDC emulator and returns the account before and after' {
+        $rows = @(Unlock-ITUser jlee -Confirm:$false)
+        $rows.Count | Should -Be 2
+        $rows[0].State | Should -Be 'Before'
+        $rows[0].LockedOut | Should -BeTrue
+        $rows[1].State | Should -Be 'After'
+        $rows[1].LockedOut | Should -BeFalse
+        Should -Invoke -ModuleName ITToolkit Unlock-ADAccount -Times 1 -Exactly -ParameterFilter { $Server -eq 'DC01.corp.example.com' }
+    }
+
+    It 'warns and changes nothing when the account is not locked' {
+        $script:reads = 1   # the next read is the unlocked one
+        $warnings = @()
+        $rows = @(Unlock-ITUser jlee -Confirm:$false -WarningVariable warnings -WarningAction SilentlyContinue)
+        $rows.Count | Should -Be 2
+        $rows[1].State | Should -Be 'After'
+        $rows[1].LockedOut | Should -BeFalse
+        @($warnings | Where-Object { "$_" -match 'is not locked out' }).Count | Should -Be 1
+        Should -Invoke -ModuleName ITToolkit Unlock-ADAccount -Times 0 -Exactly
+    }
+
+    It 'reports a failed unlock as an error and keeps the before row' {
+        Mock -ModuleName ITToolkit Unlock-ADAccount { throw 'Access is denied' }
+        $errors = @()
+        $rows = @(Unlock-ITUser jlee -Confirm:$false -ErrorAction SilentlyContinue -ErrorVariable errors)
+        $rows.Count | Should -Be 1
+        $rows[0].State | Should -Be 'Before'
+        @($errors | Where-Object { "$_" -match '^jlee: Access is denied' }).Count | Should -Be 1
+    }
+}

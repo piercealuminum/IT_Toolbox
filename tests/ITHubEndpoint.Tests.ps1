@@ -51,7 +51,7 @@ Describe 'ITHub through the JEA endpoint' -Skip:(-not $runJea) -Tag 'JEA' {
     It 'returns the catalog through the endpoint' {
         $catalog = Invoke-Client '{"action":"catalog"}'
         $catalog.PSObject.Properties.Name | Should -Not -Contain 'status' -Because "a failure document would mean: $($catalog.errors)"
-        @($catalog.tools).Count | Should -Be 10
+        @($catalog.tools).Count | Should -Be 13
         $catalog.toolkitVersion | Should -Be $manifest.ModuleVersion
     }
 
@@ -106,6 +106,23 @@ Describe 'ITHub through the JEA endpoint' -Skip:(-not $runJea) -Tag 'JEA' {
         @($network.results | Where-Object { $_.check -like 'Adapter *' }).Count | Should -BeGreaterThan 0
     }
 
+    It 'previews and runs a temp file cleanup through the endpoint' {
+        $preview = Invoke-Client ('{{"tool":"temp-cleanup","parameters":{{"computerName":"{0}","preview":true}}}}' -f $env:COMPUTERNAME)
+        $preview.status | Should -Be 'completed' -Because "errors: $($preview.errors)"
+        $preview.results | ForEach-Object { $_.type | Should -Be 'ITToolkit.TempScan' }
+
+        $cleanup = Invoke-Client ('{{"tool":"temp-cleanup","parameters":{{"computerName":"{0}","olderThanDays":30}}}}' -f $env:COMPUTERNAME)
+        $cleanup.status | Should -Be 'completed' -Because "errors: $($cleanup.errors)"
+        $cleanup.results | ForEach-Object { $_.type | Should -Be 'ITToolkit.TempCleanup' }
+    }
+
+    It 'reports a user lookup it cannot do as a failed run, not a crash' {
+        # CI machines are not domain members, so there is no domain to look the user up in.
+        $lookup = Invoke-Client '{"tool":"user-lookup","parameters":{"identity":"jlee"}}'
+        $lookup.status | Should -Be 'failed'
+        @($lookup.errors).Count | Should -BeGreaterThan 0
+    }
+
     It 'refuses a bad request inside the endpoint too' {
         $envelope = Invoke-Client '{"tool":"device-health","parameters":{"computerName":"PC1; whoami"}}'
         $envelope.status | Should -Be 'failed'
@@ -120,6 +137,7 @@ Describe 'ITHub through the JEA endpoint' -Skip:(-not $runJea) -Tag 'JEA' {
             $names | Should -Contain 'Get-ITHubToolCatalog'
             $names | Should -Not -Contain 'Get-ITDeviceHealth'
             $names | Should -Not -Contain 'Clear-ITTempFile'
+            $names | Should -Not -Contain 'Unlock-ITUser'
             $names | Should -Not -Contain 'Reset-ITUserPassword'
             $names | Should -Not -Contain 'Get-ChildItem'
             $names | Should -Not -Contain 'Invoke-Expression'

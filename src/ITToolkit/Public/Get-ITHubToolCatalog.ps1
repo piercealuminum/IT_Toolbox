@@ -5,13 +5,15 @@ function Get-ITHubToolCatalog {
 
     .DESCRIPTION
     ITHub builds its Tools page from this catalog: one entry per tool with its id, title,
-    description (the command's synopsis), the ITHub permission it needs, what it targets
+    description (the command's synopsis), its kind (read or change), the ITHub permission it
+    needs, what it targets
     (computer or user), the type of its result rows, and each parameter's name, type,
     whether it is required, its default and the rule its value must meet (pattern, minimum,
     maximum, list length or allowed values).
 
     A tool added here appears in ITHub without an ITHub change. Removing or renaming a tool or
-    a parameter is a breaking change for ITHub.
+    a parameter is a breaking change for ITHub. Tools listed in the ITHub.DisabledTools setting
+    are left out, and Invoke-ITHubTool refuses them.
 
     .EXAMPLE
     Get-ITHubToolCatalog
@@ -27,7 +29,9 @@ function Get-ITHubToolCatalog {
     param()
 
     $module = $ExecutionContext.SessionState.Module
+    $disabled = Get-ITHubDisabledTool
     $tools = foreach ($tool in $script:ITHubTools) {
+        if ($disabled -ccontains $tool.Id) { continue }
         $help = Microsoft.PowerShell.Core\Get-Help -Name $tool.Command -ErrorAction SilentlyContinue
         $parameters = foreach ($parameter in $tool.Parameters) {
             $rule = $script:ITHubRules[$parameter.Rule]
@@ -50,6 +54,7 @@ function Get-ITHubToolCatalog {
             title       = $tool.Title
             description = ([string]$help.Synopsis).Trim()
             command     = $tool.Command
+            kind        = Get-ITHubToolKind -Tool $tool
             permission  = $tool.Permission
             target      = $tool.Target
             phase       = $tool.Phase
@@ -57,6 +62,7 @@ function Get-ITHubToolCatalog {
             parameters  = @($parameters)
         }
         if ($tool.ContainsKey('OneOf')) { $item.oneOf = @($tool.OneOf) }
+        if ($tool.ContainsKey('PreviewResultType')) { $item.previewResultType = $tool.PreviewResultType }
         $item
     }
 

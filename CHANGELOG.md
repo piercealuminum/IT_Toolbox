@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.0
+
+- ITHub phase 2 tools in the catalog: `user-lookup` (read), `account-unlock` and
+  `temp-cleanup` (change, need `tools.change`). Every catalog tool now has a `kind`
+  (`read` or `change`); `temp-cleanup` has a `preview` flag and a `previewResultType`.
+- `Get-ITUserAccount`: an AD account as plain fields (`ITToolkit.UserAccount`).
+- `Unlock-ITUser`: unlocks on the PDC emulator and returns the account before and after.
+- `Clear-ITTempFile -Preview`: returns what each temp folder would free
+  (`ITToolkit.TempScan`) and deletes nothing.
+- `ITHub.DisabledTools` setting: tools refused at the endpoint whatever ITHub allows.
+- Change tools run through ITHub with `-Confirm:$false`: ITHub asks the tech first.
+- Fixed: a result property or request parameter named `Keys` was mistaken for the list of
+  keys while building or checking JSON.
+
 ## 1.2.0
 
 - ITHub web interface, phase 1 (read-only):

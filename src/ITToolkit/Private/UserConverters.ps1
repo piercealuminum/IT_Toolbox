@@ -164,11 +164,8 @@ function ConvertTo-ITUserCheck {
     }
 
     # Password
-    $expiry = $null
+    $expiry = Get-ITPasswordExpiry -User $User
     $expiryRaw = $User.'msDS-UserPasswordExpiryTimeComputed'
-    if ($null -ne $expiryRaw -and [int64]$expiryRaw -gt 0 -and [int64]$expiryRaw -lt [int64]::MaxValue) {
-        try { $expiry = [datetime]::FromFileTime([int64]$expiryRaw) } catch { $expiry = $null }
-    }
     $lastSet = if ($User.PasswordLastSet) { ([datetime]$User.PasswordLastSet).ToString($dateFormat) } else { $null }
     if (-not $User.PasswordLastSet -or ($null -ne $expiryRaw -and [int64]$expiryRaw -eq 0)) {
         Add-Check 'Active Directory' 'Password' 'Warn' 'Must change password at next sign-in'
@@ -272,6 +269,64 @@ function ConvertTo-ITUserCheck {
     }
 
     $results.ToArray()
+}
+
+function Get-ITPasswordExpiry {
+    # When the password expires, from msDS-UserPasswordExpiryTimeComputed (which includes
+    # fine-grained password policies). $null when it never expires or must be changed now.
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        $User
+    )
+
+    $raw = $User.'msDS-UserPasswordExpiryTimeComputed'
+    if ($null -eq $raw -or [int64]$raw -le 0 -or [int64]$raw -ge [int64]::MaxValue) { return $null }
+    try { return [datetime]::FromFileTime([int64]$raw) } catch { return $null }
+}
+
+function ConvertTo-ITUserAccount {
+    # One Active Directory account as plain fields, for ITHub and scripts that need facts
+    # rather than the worded checks of Get-ITUserStatus. State says when the facts were read:
+    # Current (a lookup), or Before / After (an unlock).
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        $User,
+
+        [string]$Server,
+
+        [ValidateSet('Current', 'Before', 'After')]
+        [string]$State = 'Current'
+    )
+
+    $raw = $User.'msDS-UserPasswordExpiryTimeComputed'
+    $mustChange = (-not $User.PasswordLastSet) -or ($null -ne $raw -and [int64]$raw -eq 0)
+    $location = ConvertFrom-ITDistinguishedName -DistinguishedName $User.DistinguishedName
+    [pscustomobject]@{
+        PSTypeName             = 'ITToolkit.UserAccount'
+        UserName               = [string]$User.SamAccountName
+        DisplayName            = [string]$User.DisplayName
+        UserPrincipalName      = [string]$User.UserPrincipalName
+        Email                  = [string]$User.EmailAddress
+        Title                  = [string]$User.Title
+        Department             = [string]$User.Department
+        Location               = $location.Path
+        Enabled                = [bool]$User.Enabled
+        LockedOut              = [bool]$User.LockedOut
+        LockoutTime            = $(if ($User.LockedOut -and $User.AccountLockoutTime) { [datetime]$User.AccountLockoutTime } else { $null })
+        BadPasswordCount       = [int]$User.BadLogonCount
+        LastBadPasswordAttempt = $(if ($User.LastBadPasswordAttempt) { [datetime]$User.LastBadPasswordAttempt } else { $null })
+        PasswordLastSet        = $(if ($User.PasswordLastSet) { [datetime]$User.PasswordLastSet } else { $null })
+        PasswordExpires        = $(if ($mustChange -or $User.PasswordNeverExpires) { $null } else { Get-ITPasswordExpiry -User $User })
+        PasswordNeverExpires   = [bool]$User.PasswordNeverExpires
+        PasswordExpired        = [bool]$User.PasswordExpired
+        MustChangePassword     = [bool]$mustChange
+        AccountExpires         = $(if ($User.AccountExpirationDate) { [datetime]$User.AccountExpirationDate } else { $null })
+        LastLogonDate          = $(if ($User.LastLogonDate) { [datetime]$User.LastLogonDate } else { $null })
+        DomainController       = $Server
+        State                  = $State
+    }
 }
 
 function ConvertTo-ITLockout {

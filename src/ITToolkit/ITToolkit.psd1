@@ -1,6 +1,6 @@
 @{
     RootModule           = 'ITToolkit.psm1'
-    ModuleVersion        = '1.2.0'
+    ModuleVersion        = '1.3.0'
     CompatiblePSEditions = @('Desktop', 'Core')
     GUID                 = '0d466920-fa5f-4e94-9845-e2c914dccdef'
     Author               = 'IT Department'
@@ -21,12 +21,14 @@
         'Get-ITPendingReboot'
         'Get-ITToolkitCommand'
         'Get-ITToolkitSetting'
+        'Get-ITUserAccount'
         'Get-ITUserStatus'
         'Invoke-ITHubTool'
         'New-ITPassphrase'
         'Reset-ITUserPassword'
         'Test-ITNetwork'
         'Test-ITPort'
+        'Unlock-ITUser'
     )
     CmdletsToExport      = @()
     VariablesToExport    = @()

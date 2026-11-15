@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "toolkitVersion": "1.3.0",
+  "tool": "temp-cleanup",
+  "parameters": {
+    "computerName": "PC0142",
+    "preview": false
+  },
+  "requestedBy": "Jordan Lee",
+  "startedAt": "2026-11-10T14:05:11Z",
+  "finishedAt": "2026-11-10T14:05:19Z",
+  "status": "completed",
+  "results": [
+    {
+      "type": "ITToolkit.TempCleanup",
+      "computerName": "PC0142",
+      "path": "C:\\Windows\\Temp",
+      "filesRemoved": 409,
+      "freed": "1.2 GB",
+      "freedBytes": 1281234567,
+      "failed": 3,
+      "foldersRemoved": 12
+    },
+    {
+      "type": "ITToolkit.TempCleanup",
+      "computerName": "PC0142",
+      "path": "C:\\Users\\jlee\\AppData\\Local\\Temp",
+      "filesRemoved": 2281,
+      "freed": "3.4 GB",
+      "freedBytes": 3640000000,
+      "failed": 9,
+      "foldersRemoved": 57
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "ticketNote": "== Temp file cleanup ==\nCollected 2026-11-10 14:05 by Jordan Lee with ITToolkit\n\nComputerName Path                             FilesRemoved  Freed InUse\n------------ ----                             ------------  ----- -----\nPC0142       C:\\Windows\\Temp                           409 1.2 GB     3\nPC0142       C:\\Users\\jlee\\AppData\\Local\\Temp         2281 3.4 GB     9"
+}

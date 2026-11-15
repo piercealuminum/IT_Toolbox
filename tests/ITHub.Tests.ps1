@@ -217,6 +217,64 @@ Describe 'Invoke-ITHubTool' {
     }
 }
 
+Describe 'Names that collide with dictionary members' {
+    It 'keeps a result property named Keys' {
+        InModuleScope ITToolkit {
+            $row = [pscustomobject]@{ PSTypeName = 'ITToolkit.Test'; Keys = 'a'; Values = 'b'; Count = 3 }
+            ConvertTo-Json -InputObject (ConvertTo-ITHubResult -InputObject $row) -Compress | Should -BeExactly '{"type":"ITToolkit.Test","keys":"a","values":"b","count":3}'
+        }
+    }
+
+    It 'refuses a request parameter named keys' {
+        { InModuleScope ITToolkit { Resolve-ITHubRequest -RequestJson '{"tool":"device-health","parameters":{"computerName":"PC1","keys":["computerName"]}}' } } | Should -Throw -ExpectedMessage "*Unknown parameter 'keys'*"
+    }
+}
+
+Describe 'Invoke-ITHubTool, phase 2 tools' {
+    It 'runs change tools without a prompt and read tools untouched' {
+        Mock -ModuleName ITToolkit Unlock-ITUser { }
+        Mock -ModuleName ITToolkit Get-ITUserAccount { }
+        $null = Invoke-Hub @{ tool = 'account-unlock'; parameters = @{ identity = 'jlee' } }
+        $null = Invoke-Hub @{ tool = 'user-lookup'; parameters = @{ identity = 'jlee' } }
+        Should -Invoke -ModuleName ITToolkit Unlock-ITUser -Times 1 -Exactly -ParameterFilter { $PesterBoundParameters.ContainsKey('Confirm') -and -not $Confirm -and $Identity -eq 'jlee' }
+        Should -Invoke -ModuleName ITToolkit Get-ITUserAccount -Times 1 -Exactly -ParameterFilter { -not $PesterBoundParameters.ContainsKey('Confirm') }
+    }
+
+    It 'passes preview and the age to the cleanup' {
+        Mock -ModuleName ITToolkit Clear-ITTempFile { }
+        $envelope = Invoke-Hub @{ tool = 'temp-cleanup'; parameters = @{ computerName = 'PC0142'; preview = $true; olderThanDays = 30 } }
+        $envelope.status | Should -Be 'completed'
+        $envelope.parameters.preview | Should -BeTrue
+        Should -Invoke -ModuleName ITToolkit Clear-ITTempFile -Times 1 -Exactly -ParameterFilter { $Preview -and $OlderThanDays -eq 30 -and $ComputerName -eq 'PC0142' }
+    }
+
+    It 'cleans without preview by default' {
+        Mock -ModuleName ITToolkit Clear-ITTempFile { }
+        $envelope = Invoke-Hub @{ tool = 'temp-cleanup'; parameters = @{ computerName = 'PC0142' } }
+        $envelope.parameters.preview | Should -BeFalse
+        Should -Invoke -ModuleName ITToolkit Clear-ITTempFile -Times 1 -Exactly -ParameterFilter { -not $Preview -and -not $PesterBoundParameters.ContainsKey('OlderThanDays') }
+    }
+
+    It 'refuses a tool switched off in the settings, and leaves it out of the catalog' {
+        Mock -ModuleName ITToolkit Unlock-ITUser { }
+        $file = Join-Path ([System.IO.Path]::GetTempPath()) ("ittoolkit-hub-{0}.psd1" -f [guid]::NewGuid())
+        Set-Content -LiteralPath $file -Value "@{ ITHub = @{ DisabledTools = @('account-unlock') } }"
+        $saved = $env:ITTOOLKIT_SETTINGS
+        $env:ITTOOLKIT_SETTINGS = $file
+        try {
+            $envelope = Invoke-Hub @{ tool = 'account-unlock'; parameters = @{ identity = 'jlee' } }
+            $envelope.status | Should -Be 'failed'
+            $envelope.errors[0] | Should -Match 'switched off on this server'
+            Should -Invoke -ModuleName ITToolkit Unlock-ITUser -Times 0 -Exactly
+            (Get-ITHubToolCatalog | ConvertFrom-Json).tools.id | Should -Not -Contain 'account-unlock'
+        }
+        finally {
+            $env:ITTOOLKIT_SETTINGS = $saved
+            Remove-Item -LiteralPath $file -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 Describe 'Connect-ITHubGraph' {
     It 'does nothing when no certificate is configured' {
         InModuleScope ITToolkit { Connect-ITHubGraph | Should -BeNullOrEmpty }
@@ -246,13 +304,15 @@ Describe 'Get-ITHubToolCatalog' {
     }
 
     It 'lists the phase 1 tools with unique ids' {
-        @($catalog.tools).Count | Should -Be 10
-        @($catalog.tools.id | Select-Object -Unique).Count | Should -Be 10
-        $catalog.tools | ForEach-Object { $_.phase | Should -Be 1; $_.permission | Should -Be 'tools.run' }
+        @($catalog.tools).Count | Should -Be 13
+        @($catalog.tools.id | Select-Object -Unique).Count | Should -Be 13
+        $catalog.tools | Where-Object { $_.phase -eq 1 } | ForEach-Object { $_.kind | Should -Be 'read'; $_.permission | Should -Be 'tools.run' }
+        @($catalog.tools | Where-Object { $_.phase -eq 1 }).Count | Should -Be 10
     }
 
     It 'describes <_> from its command help, and binds only real parameters' -ForEach @(
-        'device-health', 'pending-reboot', 'network-test', 'port-test', 'signed-in-users', 'installed-software', 'event-summary', 'local-admins', 'user-status', 'lockout-source'
+        'device-health', 'pending-reboot', 'network-test', 'port-test', 'signed-in-users', 'installed-software', 'event-summary', 'local-admins', 'user-status', 'lockout-source',
+        'user-lookup', 'account-unlock', 'temp-cleanup'
     ) {
         $entry = $catalog.tools | Where-Object { $_.id -eq $_ }
         $entry = @($catalog.tools | Where-Object id -eq $_)[0]
@@ -266,9 +326,23 @@ Describe 'Get-ITHubToolCatalog' {
         @($entry.parameters | Where-Object required).Count | Should -BeLessOrEqual @($entry.parameters).Count
     }
 
-    It 'never exposes a command that changes anything in phase 1' {
-        $catalog.tools.command | Should -Not -Contain 'Clear-ITTempFile'
+    It 'marks every tool that changes something, and needs tools.change for it' {
+        $changing = @($catalog.tools | Where-Object { $_.kind -ne 'read' })
+        @($changing.id | Sort-Object) | Should -Be @('account-unlock', 'temp-cleanup')
+        $changing | ForEach-Object { $_.permission | Should -Be 'tools.change'; $_.phase | Should -Be 2 }
+        ($catalog.tools | Where-Object { $_.id -eq 'user-lookup' }).kind | Should -Be 'read'
+    }
+
+    It 'never offers a password reset before phase 3' {
         $catalog.tools.command | Should -Not -Contain 'Reset-ITUserPassword'
+    }
+
+    It 'describes the preview parameter and its result type' {
+        $cleanup = $catalog.tools | Where-Object { $_.id -eq 'temp-cleanup' }
+        $cleanup.previewResultType | Should -Be 'ITToolkit.TempScan'
+        $preview = $cleanup.parameters | Where-Object { $_.name -eq 'preview' }
+        $preview.type | Should -Be 'boolean'
+        $preview.default | Should -BeFalse
     }
 }
 
@@ -310,7 +384,7 @@ Describe 'Invoke-ITHubRequest.ps1 (local mode)' {
     It 'returns the catalog' {
         $result = Invoke-Client '{"action":"catalog"}'
         $result.ExitCode | Should -Be 0
-        @(($result.Output | ConvertFrom-Json).tools).Count | Should -Be 10
+        @(($result.Output | ConvertFrom-Json).tools).Count | Should -Be 13
     }
 
     It 'runs a tool and writes exactly one JSON document' {
@@ -366,6 +440,27 @@ Describe 'Sample envelopes for ITHub (docs/ithub/samples)' {
             New-UserCheckRow 'jlee' 'Entra ID' 'Licenses' 'Info' 'Microsoft 365 Business Premium'
             New-UserCheckRow 'jlee' 'Entra ID' 'MFA methods' 'OK' 'Authenticator app (iPhone 15), Phone (mobile, ending 4512)'
         }
+        function New-AccountRow($State, $LockedOut) {
+            [pscustomobject]@{
+                PSTypeName = 'ITToolkit.UserAccount'; UserName = 'jlee'; DisplayName = 'Jordan Lee'; UserPrincipalName = 'jordan.lee@example.com'; Email = 'jordan.lee@example.com'
+                Title = 'Sales Manager'; Department = 'Sales'; Location = 'corp.example.com/Users/Sales'; Enabled = $true; LockedOut = $LockedOut
+                LockoutTime = $(if ($LockedOut) { [datetime]::SpecifyKind([datetime]'2026-11-10 13:41:07', [DateTimeKind]::Utc) } else { $null })
+                BadPasswordCount = $(if ($LockedOut) { 5 } else { 0 }); LastBadPasswordAttempt = [datetime]::SpecifyKind([datetime]'2026-11-10 13:41:07', [DateTimeKind]::Utc)
+                PasswordLastSet = [datetime]::SpecifyKind([datetime]'2026-10-21 14:12:00', [DateTimeKind]::Utc); PasswordExpires = [datetime]::SpecifyKind([datetime]'2027-01-19 14:12:00', [DateTimeKind]::Utc)
+                PasswordNeverExpires = $false; PasswordExpired = $false; MustChangePassword = $false; AccountExpires = $null
+                LastLogonDate = [datetime]::SpecifyKind([datetime]'2026-11-07 08:00:00', [DateTimeKind]::Utc); DomainController = 'DC01.corp.example.com'; State = $State
+            }
+        }
+        Mock -ModuleName ITToolkit Get-ITUserAccount { New-AccountRow 'Current' $true }
+        Mock -ModuleName ITToolkit Unlock-ITUser { New-AccountRow 'Before' $true; New-AccountRow 'After' $false }
+        Mock -ModuleName ITToolkit Clear-ITTempFile -ParameterFilter { $Preview } {
+            [pscustomobject]@{ PSTypeName = 'ITToolkit.TempScan'; ComputerName = 'PC0142'; Path = 'C:\Windows\Temp'; Files = 412; Size = '1.2 GB'; Bytes = [int64]1288490188; Unreadable = 0; OlderThanDays = 7 }
+            [pscustomobject]@{ PSTypeName = 'ITToolkit.TempScan'; ComputerName = 'PC0142'; Path = 'C:\Users\jlee\AppData\Local\Temp'; Files = 2290; Size = '3.4 GB'; Bytes = [int64]3650722201; Unreadable = 3; OlderThanDays = 7 }
+        }
+        Mock -ModuleName ITToolkit Clear-ITTempFile -ParameterFilter { -not $Preview } {
+            [pscustomobject]@{ PSTypeName = 'ITToolkit.TempCleanup'; ComputerName = 'PC0142'; Path = 'C:\Windows\Temp'; FilesRemoved = 409; Freed = '1.2 GB'; FreedBytes = [int64]1281234567; Failed = 3; FoldersRemoved = 12 }
+            [pscustomobject]@{ PSTypeName = 'ITToolkit.TempCleanup'; ComputerName = 'PC0142'; Path = 'C:\Users\jlee\AppData\Local\Temp'; FilesRemoved = 2281; Freed = '3.4 GB'; FreedBytes = [int64]3640000000; Failed = 9; FoldersRemoved = 57 }
+        }
         Mock -ModuleName ITToolkit Get-ITLockoutSource {
             [pscustomobject]@{ PSTypeName = 'ITToolkit.Lockout'; TimeCreated = [datetime]::SpecifyKind([datetime]'2026-11-10 13:41:07', [DateTimeKind]::Utc); UserName = 'jlee'; CallerComputer = 'PC0177'; DomainController = 'DC01.corp.example.com'; Note = $null }
             [pscustomobject]@{ PSTypeName = 'ITToolkit.Lockout'; TimeCreated = [datetime]::SpecifyKind([datetime]'2026-11-10 12:10:44', [DateTimeKind]::Utc); UserName = 'jlee'; CallerComputer = ''; DomainController = 'DC01.corp.example.com'; Note = 'No caller computer recorded. Usually a phone, VPN, Outlook on the web or another network service with an old password' }
@@ -384,6 +479,10 @@ Describe 'Sample envelopes for ITHub (docs/ithub/samples)' {
             'device-health'      = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"device-health","parameters":{"computerName":"PC0142"},"requestedBy":"Jordan Lee"}')
             'user-status'        = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"user-status","parameters":{"identity":"jlee"},"requestedBy":"Jordan Lee"}')
             'lockout-source'     = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"lockout-source","parameters":{"identity":"jlee"},"requestedBy":"Jordan Lee"}')
+            'user-lookup'        = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"user-lookup","parameters":{"identity":"jlee"},"requestedBy":"Jordan Lee"}')
+            'account-unlock'     = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"account-unlock","parameters":{"identity":"jlee"},"requestedBy":"Jordan Lee"}')
+            'temp-cleanup-preview' = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"temp-cleanup","parameters":{"computerName":"PC0142","preview":true},"requestedBy":"Jordan Lee"}')
+            'temp-cleanup'       = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"temp-cleanup","parameters":{"computerName":"PC0142"},"requestedBy":"Jordan Lee"}')
             'port-test'          = Use-FixedTimes ((Invoke-ITHubTool -RequestJson ('{{"tool":"port-test","parameters":{{"host":"127.0.0.1","ports":[{0},1]}},"requestedBy":"Jordan Lee"}}' -f $openPort)) -replace [regex]::Escape([string]$openPort), '8443' -replace '"source":"[^"]+"', '"source":"ITHUB01"' -replace '"latencyMs":\d+', '"latencyMs":2')
             'failed-unreachable' = $null
             'failed-validation'  = Use-FixedTimes (Invoke-ITHubTool -RequestJson '{"tool":"device-health","parameters":{"computerName":"PC0142; whoami"},"requestedBy":"Jordan Lee"}')
@@ -407,7 +506,8 @@ Describe 'Sample envelopes for ITHub (docs/ithub/samples)' {
     }
 
     It 'has a committed sample for <_> with the same shape the code produces now' -ForEach @(
-        'catalog', 'device-health', 'user-status', 'lockout-source', 'port-test', 'failed-unreachable', 'failed-validation'
+        'catalog', 'device-health', 'user-status', 'lockout-source', 'port-test', 'failed-unreachable', 'failed-validation',
+        'user-lookup', 'account-unlock', 'temp-cleanup-preview', 'temp-cleanup'
     ) {
         $path = Join-Path $SampleFolder "$_.json"
         Test-Path -LiteralPath $path | Should -BeTrue -Because 'regenerate the samples with ITTOOLKIT_WRITE_SAMPLES=1'

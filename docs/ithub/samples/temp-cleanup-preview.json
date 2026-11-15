@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "toolkitVersion": "1.3.0",
+  "tool": "temp-cleanup",
+  "parameters": {
+    "computerName": "PC0142",
+    "preview": true
+  },
+  "requestedBy": "Jordan Lee",
+  "startedAt": "2026-11-10T14:05:11Z",
+  "finishedAt": "2026-11-10T14:05:19Z",
+  "status": "completed",
+  "results": [
+    {
+      "type": "ITToolkit.TempScan",
+      "computerName": "PC0142",
+      "path": "C:\\Windows\\Temp",
+      "files": 412,
+      "size": "1.2 GB",
+      "bytes": 1288490188,
+      "unreadable": 0,
+      "olderThanDays": 7
+    },
+    {
+      "type": "ITToolkit.TempScan",
+      "computerName": "PC0142",
+      "path": "C:\\Users\\jlee\\AppData\\Local\\Temp",
+      "files": 2290,
+      "size": "3.4 GB",
+      "bytes": 3650722201,
+      "unreadable": 3,
+      "olderThanDays": 7
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "ticketNote": "== Temp file cleanup preview ==\nCollected 2026-11-10 14:05 by Jordan Lee with ITToolkit\n\nComputerName Path                             Files   Size\n------------ ----                             -----   ----\nPC0142       C:\\Windows\\Temp                    412 1.2 GB\nPC0142       C:\\Users\\jlee\\AppData\\Local\\Temp  2290 3.4 GB"
+}
