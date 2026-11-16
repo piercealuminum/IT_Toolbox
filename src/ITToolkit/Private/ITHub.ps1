@@ -190,6 +190,25 @@ function Test-ITHubValue {
     return $null
 }
 
+function Test-ITHubRequester {
+    # requestedBy is display text only (the ticket note names the tech, and it is echoed
+    # back); it never reaches a command or a path. So any name is fine: accents, brackets,
+    # an email address. Refused: not text, empty, over 128 characters, line breaks and other
+    # control characters (they would break the note's layout), and < > (never in a name).
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [AllowNull()]
+        $Value
+    )
+
+    if ($Value -isnot [string]) { return 'requestedBy must be text (the name of the person running the tool).' }
+    if ($Value -cnotmatch '^[^\x00-\x1F\x7F<>]{1,128}$') {
+        return 'requestedBy must be 1 to 128 characters, with no line breaks, control characters, < or >.'
+    }
+    return $null
+}
+
 function Resolve-ITHubRequest {
     # Parses and checks a request. Returns Tool, Parameters (echoed back, as given), Bound
     # (for splatting into the command) and RequestedBy, or throws listing every problem.
@@ -218,7 +237,8 @@ function Resolve-ITHubRequest {
 
     $requestedBy = $null
     if ($null -ne $request.requestedBy) {
-        if ($request.requestedBy -isnot [string] -or $request.requestedBy -cnotmatch "^[A-Za-z0-9 .@'_\\-]{1,128}$") { throw 'requestedBy must be a name of up to 128 letters, digits, spaces and . @ '' _ \ -' }
+        $problem = Test-ITHubRequester -Value $request.requestedBy
+        if ($problem) { throw $problem }
         $requestedBy = $request.requestedBy
     }
 

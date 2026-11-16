@@ -72,9 +72,30 @@ Describe 'Request checking' {
         @{ Case = 'neither ports nor preset'; Json = '{"tool":"port-test","parameters":{"host":"fs01"}}'; Pattern = 'exactly one of: ports, preset' }
         @{ Case = 'an unknown preset'; Json = '{"tool":"port-test","parameters":{"host":"fs01","preset":"Everything"}}'; Pattern = 'must be one of' }
         @{ Case = 'a bad host:port'; Json = '{"tool":"network-test","parameters":{"computerName":"PC1","tcpTargets":["fs01 445"]}}'; Pattern = 'is not allowed' }
-        @{ Case = 'a bad requester name'; Json = '{"tool":"device-health","parameters":{"computerName":"PC1"},"requestedBy":"<script>"}'; Pattern = 'requestedBy' }
+        @{ Case = 'a requester name with < >'; Json = '{"tool":"device-health","parameters":{"computerName":"PC1"},"requestedBy":"<script>"}'; Pattern = 'requestedBy' }
+        @{ Case = 'a requester name with a line break'; Json = '{"tool":"device-health","parameters":{"computerName":"PC1"},"requestedBy":"Jordan\nLee"}'; Pattern = 'requestedBy' }
+        @{ Case = 'a requester that is not text'; Json = '{"tool":"device-health","parameters":{"computerName":"PC1"},"requestedBy":7}'; Pattern = 'requestedBy must be text' }
+        @{ Case = 'an empty requester name'; Json = '{"tool":"device-health","parameters":{"computerName":"PC1"},"requestedBy":""}'; Pattern = 'requestedBy' }
     ) {
         { InModuleScope ITToolkit -Parameters @{ Json = $Json } { param($Json) Resolve-ITHubRequest -RequestJson $Json } } | Should -Throw -ExpectedMessage "*$Pattern*"
+    }
+
+    It 'accepts the requester name <Name>' -ForEach @(
+        @{ Name = 'Jordan Lee (jlee@example.com)' }
+        @{ Name = 'CORP\jlee' }
+        @{ Name = "Jos$([char]0xE9) N$([char]0xFA)$([char]0xF1)ez" }
+        @{ Name = "O'Brien, Pat [IT]" }
+        @{ Name = ('x' * 128) }
+    ) {
+        $json = ConvertTo-Json -InputObject ([ordered]@{ tool = 'device-health'; parameters = @{ computerName = 'PC1' }; requestedBy = $Name }) -Compress
+        $request = InModuleScope ITToolkit -Parameters @{ Json = $json } { param($Json) Resolve-ITHubRequest -RequestJson $Json }
+        $request.RequestedBy | Should -BeExactly $Name
+    }
+
+    It 'echoes a valid requester even when the request is refused' {
+        $envelope = Invoke-ITHubTool -RequestJson '{"tool":"device-health","parameters":{"computerName":"bad name"},"requestedBy":"Jordan Lee (jlee@example.com)"}' | ConvertFrom-Json
+        $envelope.status | Should -Be 'failed'
+        $envelope.requestedBy | Should -Be 'Jordan Lee (jlee@example.com)'
     }
 
     It 'lists every problem at once' {

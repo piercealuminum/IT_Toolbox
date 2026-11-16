@@ -134,6 +134,7 @@ function Invoke-ITHubTool {
         try {
             $raw = ConvertFrom-Json -InputObject $RequestJson -ErrorAction Stop
             if ($raw.tool -is [string] -and $raw.tool.Length -le 64) { $envelope.tool = $raw.tool }
+            if ($null -ne $raw.requestedBy -and -not (Test-ITHubRequester -Value $raw.requestedBy)) { $envelope.requestedBy = $raw.requestedBy }
         }
         catch { $null = $_ }
     }

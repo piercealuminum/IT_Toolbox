@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.1
+
+- Fixed: ITHub runs failed when the tech's name (`requestedBy`) held anything but letters,
+  digits, spaces and `. @ ' _ \ -`, for example brackets or accented letters. Any name of 1
+  to 128 characters is accepted now; only line breaks, control characters and `< >` are
+  refused. It is display text only and never reaches a command.
+- A refused request now echoes `requestedBy` too, like `tool`.
+
 ## 1.3.0
 
 - ITHub phase 2 tools in the catalog: `user-lookup` (read), `account-unlock` and
