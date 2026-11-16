@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0
+
+- The ITHub catalog has a `resultTypes` section: the default columns for each result type
+  (field, label, format, whether it may wrap, fallback field), the same short set PowerShell
+  shows. ITHub can show compact result cards without choosing fields itself, and long
+  technical fields such as SIDs and uninstall strings stay out of the card.
+
 ## 1.3.1
 
 - Fixed: ITHub runs failed when the tech's name (`requestedBy`) held anything but letters,

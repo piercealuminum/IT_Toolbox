@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "toolkitVersion": "1.3.1",
+  "toolkitVersion": "1.4.0",
   "tools": [
     {
       "id": "device-health",
       "title": "Device health",
-      "description": "PesterMock_ITToolkit_Get-ITDeviceHealth_43b99452-76c3-44ae-b369-973143870688 [[-ComputerName] <string[]>] [-Credential <pscredential>] [-Summary] [<CommonParameters>]",
+      "description": "PesterMock_ITToolkit_Get-ITDeviceHealth_dee961ac-9f15-4654-a2ea-1108baba4d37 [[-ComputerName] <string[]>] [-Credential <pscredential>] [-Summary] [<CommonParameters>]",
       "command": "Get-ITDeviceHealth",
       "kind": "read",
       "permission": "tools.run",
@@ -226,7 +226,7 @@
     {
       "id": "user-status",
       "title": "User account status",
-      "description": "PesterMock_ITToolkit_Get-ITUserStatus_2c0a219a-291f-4ada-bd7d-0e7083103c53 [-Identity] <string[]> [-Server <string>] [-SkipEntra] [<CommonParameters>]",
+      "description": "PesterMock_ITToolkit_Get-ITUserStatus_199910ce-bef0-4565-9e2d-da07c143b151 [-Identity] <string[]> [-Server <string>] [-SkipEntra] [<CommonParameters>]",
       "command": "Get-ITUserStatus",
       "kind": "read",
       "permission": "tools.run",
@@ -246,7 +246,7 @@
     {
       "id": "lockout-source",
       "title": "Lockout source",
-      "description": "PesterMock_ITToolkit_Get-ITLockoutSource_f6d14c46-0a14-4471-978b-41b662d5026d [[-Identity] <string>] [-Hours <int>] [-Server <string>] [-Credential <pscredential>] [<CommonParameters>]",
+      "description": "PesterMock_ITToolkit_Get-ITLockoutSource_5d3a3bae-89a5-4dd2-a016-d92786b9c660 [[-Identity] <string>] [-Hours <int>] [-Server <string>] [-Credential <pscredential>] [<CommonParameters>]",
       "command": "Get-ITLockoutSource",
       "kind": "read",
       "permission": "tools.run",
@@ -275,7 +275,7 @@
     {
       "id": "user-lookup",
       "title": "User account lookup",
-      "description": "PesterMock_ITToolkit_Get-ITUserAccount_85e352df-fb30-43d5-8a5c-3e05ac0c4b9f [-Identity] <string[]> [-Server <string>] [<CommonParameters>]",
+      "description": "PesterMock_ITToolkit_Get-ITUserAccount_7c0cc640-a6b2-4648-9c8b-fd50b05887e4 [-Identity] <string[]> [-Server <string>] [<CommonParameters>]",
       "command": "Get-ITUserAccount",
       "kind": "read",
       "permission": "tools.run",
@@ -295,7 +295,7 @@
     {
       "id": "account-unlock",
       "title": "Unlock account",
-      "description": "PesterMock_ITToolkit_Unlock-ITUser_6b4d4206-43c1-4b34-9500-de931b736ed2 [-Identity] <string> [-Server <string>] [-WhatIf] [-Confirm] [<CommonParameters>]",
+      "description": "PesterMock_ITToolkit_Unlock-ITUser_f4f97380-0d63-411f-86e8-33deace8cd57 [-Identity] <string> [-Server <string>] [-WhatIf] [-Confirm] [<CommonParameters>]",
       "command": "Unlock-ITUser",
       "kind": "change",
       "permission": "tools.change",
@@ -315,7 +315,7 @@
     {
       "id": "temp-cleanup",
       "title": "Temp file cleanup",
-      "description": "PesterMock_ITToolkit_Clear-ITTempFile_f3c15385-0c04-498e-be63-2e47a21269b6 [[-ComputerName] <string[]>] [-OlderThanDays <int>] [-Credential <pscredential>] [-Preview] [-WhatIf] [-Confirm] [<CommonParameters>]",
+      "description": "PesterMock_ITToolkit_Clear-ITTempFile_7d1907e7-3aa5-4614-8ded-d3c8a5fe2f21 [[-ComputerName] <string[]>] [-OlderThanDays <int>] [-Credential <pscredential>] [-Preview] [-WhatIf] [-Confirm] [<CommonParameters>]",
       "command": "Clear-ITTempFile",
       "kind": "change",
       "permission": "tools.change",
@@ -348,5 +348,398 @@
       ],
       "previewResultType": "ITToolkit.TempScan"
     }
-  ]
+  ],
+  "resultTypes": {
+    "ITToolkit.CheckResult": {
+      "columns": [
+        {
+          "field": "check",
+          "label": "Check",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "status",
+          "label": "Status",
+          "format": "status",
+          "wrap": false
+        },
+        {
+          "field": "detail",
+          "label": "Detail",
+          "format": "text",
+          "wrap": true
+        }
+      ]
+    },
+    "ITToolkit.PendingReboot": {
+      "columns": [
+        {
+          "field": "rebootPending",
+          "label": "Restart needed",
+          "format": "boolean",
+          "wrap": false
+        },
+        {
+          "field": "reasons",
+          "label": "Reasons",
+          "format": "list",
+          "wrap": true
+        },
+        {
+          "field": "uptimeDays",
+          "label": "Uptime (days)",
+          "format": "number",
+          "wrap": false
+        },
+        {
+          "field": "lastBootTime",
+          "label": "Last boot",
+          "format": "datetime",
+          "wrap": false
+        }
+      ]
+    },
+    "ITToolkit.PortTest": {
+      "columns": [
+        {
+          "field": "computerName",
+          "label": "Host",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "port",
+          "label": "Port",
+          "format": "number",
+          "wrap": false
+        },
+        {
+          "field": "service",
+          "label": "Service",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "open",
+          "label": "Open",
+          "format": "boolean",
+          "wrap": false
+        },
+        {
+          "field": "latencyMs",
+          "label": "ms",
+          "format": "number",
+          "wrap": false
+        },
+        {
+          "field": "detail",
+          "label": "Detail",
+          "format": "text",
+          "wrap": true
+        }
+      ]
+    },
+    "ITToolkit.Session": {
+      "columns": [
+        {
+          "field": "userName",
+          "label": "User",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "sessionName",
+          "label": "Session",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "id",
+          "label": "ID",
+          "format": "number",
+          "wrap": false
+        },
+        {
+          "field": "state",
+          "label": "State",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "idleTime",
+          "label": "Idle",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "logonTime",
+          "label": "Logon time",
+          "format": "datetime",
+          "wrap": false
+        }
+      ]
+    },
+    "ITToolkit.Software": {
+      "columns": [
+        {
+          "field": "name",
+          "label": "Name",
+          "format": "text",
+          "wrap": true
+        },
+        {
+          "field": "version",
+          "label": "Version",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "publisher",
+          "label": "Publisher",
+          "format": "text",
+          "wrap": true
+        },
+        {
+          "field": "installDate",
+          "label": "Installed",
+          "format": "date",
+          "wrap": false
+        },
+        {
+          "field": "scope",
+          "label": "Scope",
+          "format": "text",
+          "wrap": false
+        }
+      ]
+    },
+    "ITToolkit.EventGroup": {
+      "columns": [
+        {
+          "field": "lastSeen",
+          "label": "Last seen",
+          "format": "datetime",
+          "wrap": false
+        },
+        {
+          "field": "count",
+          "label": "Count",
+          "format": "number",
+          "wrap": false
+        },
+        {
+          "field": "level",
+          "label": "Level",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "source",
+          "label": "Source",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "id",
+          "label": "ID",
+          "format": "number",
+          "wrap": false
+        },
+        {
+          "field": "note",
+          "label": "Summary",
+          "format": "text",
+          "wrap": true,
+          "fallback": "message"
+        }
+      ]
+    },
+    "ITToolkit.LocalAdmin": {
+      "columns": [
+        {
+          "field": "name",
+          "label": "Name",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "class",
+          "label": "Class",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "source",
+          "label": "Source",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "note",
+          "label": "Note",
+          "format": "text",
+          "wrap": true
+        }
+      ]
+    },
+    "ITToolkit.UserCheck": {
+      "columns": [
+        {
+          "field": "check",
+          "label": "Check",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "status",
+          "label": "Status",
+          "format": "status",
+          "wrap": false
+        },
+        {
+          "field": "detail",
+          "label": "Detail",
+          "format": "text",
+          "wrap": true
+        }
+      ]
+    },
+    "ITToolkit.Lockout": {
+      "columns": [
+        {
+          "field": "timeCreated",
+          "label": "Time",
+          "format": "datetime",
+          "wrap": false
+        },
+        {
+          "field": "userName",
+          "label": "User",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "callerComputer",
+          "label": "Caller computer",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "domainController",
+          "label": "Domain controller",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "note",
+          "label": "Note",
+          "format": "text",
+          "wrap": true
+        }
+      ]
+    },
+    "ITToolkit.UserAccount": {
+      "columns": [
+        {
+          "field": "state",
+          "label": "State",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "displayName",
+          "label": "Name",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "userName",
+          "label": "Account",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "enabled",
+          "label": "Enabled",
+          "format": "boolean",
+          "wrap": false
+        },
+        {
+          "field": "lockedOut",
+          "label": "Locked out",
+          "format": "boolean",
+          "wrap": false
+        },
+        {
+          "field": "badPasswordCount",
+          "label": "Bad passwords",
+          "format": "number",
+          "wrap": false
+        },
+        {
+          "field": "mustChangePassword",
+          "label": "Must change password",
+          "format": "boolean",
+          "wrap": false
+        },
+        {
+          "field": "passwordExpires",
+          "label": "Password expires",
+          "format": "datetime",
+          "wrap": false
+        }
+      ]
+    },
+    "ITToolkit.TempCleanup": {
+      "columns": [
+        {
+          "field": "path",
+          "label": "Folder",
+          "format": "text",
+          "wrap": true
+        },
+        {
+          "field": "filesRemoved",
+          "label": "Files removed",
+          "format": "number",
+          "wrap": false
+        },
+        {
+          "field": "freed",
+          "label": "Freed",
+          "format": "text",
+          "wrap": false
+        },
+        {
+          "field": "failed",
+          "label": "In use",
+          "format": "number",
+          "wrap": false
+        }
+      ]
+    },
+    "ITToolkit.TempScan": {
+      "columns": [
+        {
+          "field": "path",
+          "label": "Folder",
+          "format": "text",
+          "wrap": true
+        },
+        {
+          "field": "files",
+          "label": "Files",
+          "format": "number",
+          "wrap": false
+        },
+        {
+          "field": "size",
+          "label": "Size",
+          "format": "text",
+          "wrap": false
+        }
+      ]
+    }
+  }
 }

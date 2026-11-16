@@ -11,6 +11,11 @@ function Get-ITHubToolCatalog {
     whether it is required, its default and the rule its value must meet (pattern, minimum,
     maximum, list length or allowed values).
 
+    resultTypes gives, for each result type, the columns to show by default: field, label,
+    format (text, number, boolean, datetime, date, list or status), whether long text may wrap,
+    and a fallback field for when the column's own field is empty. It matches what PowerShell
+    shows for the same results; every other field stays in the result rows.
+
     A tool added here appears in ITHub without an ITHub change. Removing or renaming a tool or
     a parameter is a breaking change for ITHub. Tools listed in the ITHub.DisabledTools setting
     are left out, and Invoke-ITHubTool refuses them.
@@ -66,10 +71,30 @@ function Get-ITHubToolCatalog {
         $item
     }
 
+    # Default columns for every result type a listed tool can return.
+    $types = @($tools | ForEach-Object { $_.resultType; if ($_.Contains('previewResultType')) { $_.previewResultType } } | Where-Object { $_ } | Microsoft.PowerShell.Utility\Select-Object -Unique)
+    $resultTypes = [ordered]@{}
+    foreach ($type in $types) {
+        if (-not $script:ITHubColumns.Contains($type)) { continue }
+        $resultTypes[$type] = [ordered]@{
+            columns = @(foreach ($column in $script:ITHubColumns[$type]) {
+                    $entry = [ordered]@{
+                        field  = $column.Field
+                        label  = $column.Label
+                        format = $(if ($column.ContainsKey('Format')) { $column.Format } else { 'text' })
+                        wrap   = [bool]$column.Wrap
+                    }
+                    if ($column.ContainsKey('Fallback')) { $entry.fallback = $column.Fallback }
+                    $entry
+                })
+        }
+    }
+
     $catalog = [ordered]@{
         schemaVersion  = $script:ITHubSchemaVersion
         toolkitVersion = $module.Version.ToString()
         tools          = @($tools)
+        resultTypes    = $resultTypes
     }
     ConvertTo-Json -InputObject $catalog -Depth 10 -Compress
 }

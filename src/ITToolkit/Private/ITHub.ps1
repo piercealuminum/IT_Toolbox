@@ -101,6 +101,99 @@ $script:ITHubTools = @(
     }
 )
 
+# Default columns for each result type, the way ITHub should show results at a glance: the
+# same short set techs see in PowerShell (ITToolkit.Format.ps1xml), in camelCase as in the
+# envelope. Every other field is still in each result row, for "Open run" or a detail view.
+#   format: text (default), number, boolean, datetime, date, list (an array), status (OK, Warn,
+#           Fail or Info)
+#   wrap:   $true for long text that may wrap; everything else should stay on one line
+#   fallback: show this field instead when the column's own field is empty
+# The run's computer is in the card header, so computerName is left out unless it is the
+# thing being tested (port test).
+$script:ITHubColumns = [ordered]@{
+    'ITToolkit.CheckResult'   = @(
+        @{ Field = 'check'; Label = 'Check' }
+        @{ Field = 'status'; Label = 'Status'; Format = 'status' }
+        @{ Field = 'detail'; Label = 'Detail'; Wrap = $true }
+    )
+    'ITToolkit.UserCheck'     = @(
+        @{ Field = 'check'; Label = 'Check' }
+        @{ Field = 'status'; Label = 'Status'; Format = 'status' }
+        @{ Field = 'detail'; Label = 'Detail'; Wrap = $true }
+    )
+    'ITToolkit.PendingReboot' = @(
+        @{ Field = 'rebootPending'; Label = 'Restart needed'; Format = 'boolean' }
+        @{ Field = 'reasons'; Label = 'Reasons'; Format = 'list'; Wrap = $true }
+        @{ Field = 'uptimeDays'; Label = 'Uptime (days)'; Format = 'number' }
+        @{ Field = 'lastBootTime'; Label = 'Last boot'; Format = 'datetime' }
+    )
+    'ITToolkit.PortTest'      = @(
+        @{ Field = 'computerName'; Label = 'Host' }
+        @{ Field = 'port'; Label = 'Port'; Format = 'number' }
+        @{ Field = 'service'; Label = 'Service' }
+        @{ Field = 'open'; Label = 'Open'; Format = 'boolean' }
+        @{ Field = 'latencyMs'; Label = 'ms'; Format = 'number' }
+        @{ Field = 'detail'; Label = 'Detail'; Wrap = $true }
+    )
+    'ITToolkit.Session'       = @(
+        @{ Field = 'userName'; Label = 'User' }
+        @{ Field = 'sessionName'; Label = 'Session' }
+        @{ Field = 'id'; Label = 'ID'; Format = 'number' }
+        @{ Field = 'state'; Label = 'State' }
+        @{ Field = 'idleTime'; Label = 'Idle' }
+        @{ Field = 'logonTime'; Label = 'Logon time'; Format = 'datetime' }
+    )
+    'ITToolkit.Software'      = @(
+        @{ Field = 'name'; Label = 'Name'; Wrap = $true }
+        @{ Field = 'version'; Label = 'Version' }
+        @{ Field = 'publisher'; Label = 'Publisher'; Wrap = $true }
+        @{ Field = 'installDate'; Label = 'Installed'; Format = 'date' }
+        @{ Field = 'scope'; Label = 'Scope' }
+    )
+    'ITToolkit.EventGroup'    = @(
+        @{ Field = 'lastSeen'; Label = 'Last seen'; Format = 'datetime' }
+        @{ Field = 'count'; Label = 'Count'; Format = 'number' }
+        @{ Field = 'level'; Label = 'Level' }
+        @{ Field = 'source'; Label = 'Source' }
+        @{ Field = 'id'; Label = 'ID'; Format = 'number' }
+        @{ Field = 'note'; Label = 'Summary'; Wrap = $true; Fallback = 'message' }
+    )
+    'ITToolkit.LocalAdmin'    = @(
+        @{ Field = 'name'; Label = 'Name' }
+        @{ Field = 'class'; Label = 'Class' }
+        @{ Field = 'source'; Label = 'Source' }
+        @{ Field = 'note'; Label = 'Note'; Wrap = $true }
+    )
+    'ITToolkit.Lockout'       = @(
+        @{ Field = 'timeCreated'; Label = 'Time'; Format = 'datetime' }
+        @{ Field = 'userName'; Label = 'User' }
+        @{ Field = 'callerComputer'; Label = 'Caller computer' }
+        @{ Field = 'domainController'; Label = 'Domain controller' }
+        @{ Field = 'note'; Label = 'Note'; Wrap = $true }
+    )
+    'ITToolkit.UserAccount'   = @(
+        @{ Field = 'state'; Label = 'State' }
+        @{ Field = 'displayName'; Label = 'Name' }
+        @{ Field = 'userName'; Label = 'Account' }
+        @{ Field = 'enabled'; Label = 'Enabled'; Format = 'boolean' }
+        @{ Field = 'lockedOut'; Label = 'Locked out'; Format = 'boolean' }
+        @{ Field = 'badPasswordCount'; Label = 'Bad passwords'; Format = 'number' }
+        @{ Field = 'mustChangePassword'; Label = 'Must change password'; Format = 'boolean' }
+        @{ Field = 'passwordExpires'; Label = 'Password expires'; Format = 'datetime' }
+    )
+    'ITToolkit.TempScan'      = @(
+        @{ Field = 'path'; Label = 'Folder'; Wrap = $true }
+        @{ Field = 'files'; Label = 'Files'; Format = 'number' }
+        @{ Field = 'size'; Label = 'Size' }
+    )
+    'ITToolkit.TempCleanup'   = @(
+        @{ Field = 'path'; Label = 'Folder'; Wrap = $true }
+        @{ Field = 'filesRemoved'; Label = 'Files removed'; Format = 'number' }
+        @{ Field = 'freed'; Label = 'Freed' }
+        @{ Field = 'failed'; Label = 'In use'; Format = 'number' }
+    )
+}
+
 function Get-ITHubToolKind {
     [CmdletBinding()]
     [OutputType([string])]

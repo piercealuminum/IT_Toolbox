@@ -1,6 +1,6 @@
 @{
     RootModule           = 'ITToolkit.psm1'
-    ModuleVersion        = '1.3.1'
+    ModuleVersion        = '1.4.0'
     CompatiblePSEditions = @('Desktop', 'Core')
     GUID                 = '0d466920-fa5f-4e94-9845-e2c914dccdef'
     Author               = 'IT Department'
