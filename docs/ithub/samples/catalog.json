@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "toolkitVersion": "1.4.0",
+  "toolkitVersion": "1.4.1",
   "tools": [
     {
       "id": "device-health",
       "title": "Device health",
-      "description": "PesterMock_ITToolkit_Get-ITDeviceHealth_dee961ac-9f15-4654-a2ea-1108baba4d37 [[-ComputerName] <string[]>] [-Credential <pscredential>] [-Summary] [<CommonParameters>]",
+      "description": "PesterMock_ITToolkit_Get-ITDeviceHealth_e5e31891-eb1d-40eb-bcb9-082860421e36 [[-ComputerName] <string[]>] [-Credential <pscredential>] [-Summary] [<CommonParameters>]",
       "command": "Get-ITDeviceHealth",
       "kind": "read",
       "permission": "tools.run",
@@ -226,7 +226,7 @@
     {
       "id": "user-status",
       "title": "User account status",
-      "description": "PesterMock_ITToolkit_Get-ITUserStatus_199910ce-bef0-4565-9e2d-da07c143b151 [-Identity] <string[]> [-Server <string>] [-SkipEntra] [<CommonParameters>]",
+      "description": "PesterMock_ITToolkit_Get-ITUserStatus_e385d492-324a-4263-a773-9e9aa3061b81 [-Identity] <string[]> [-Server <string>] [-SkipEntra] [<CommonParameters>]",
       "command": "Get-ITUserStatus",
       "kind": "read",
       "permission": "tools.run",
@@ -246,7 +246,7 @@
     {
       "id": "lockout-source",
       "title": "Lockout source",
-      "description": "PesterMock_ITToolkit_Get-ITLockoutSource_5d3a3bae-89a5-4dd2-a016-d92786b9c660 [[-Identity] <string>] [-Hours <int>] [-Server <string>] [-Credential <pscredential>] [<CommonParameters>]",
+      "description": "PesterMock_ITToolkit_Get-ITLockoutSource_e46f4a57-d4b6-4a73-8bda-069c640baed9 [[-Identity] <string>] [-Hours <int>] [-Server <string>] [-Credential <pscredential>] [<CommonParameters>]",
       "command": "Get-ITLockoutSource",
       "kind": "read",
       "permission": "tools.run",
@@ -275,7 +275,7 @@
     {
       "id": "user-lookup",
       "title": "User account lookup",
-      "description": "PesterMock_ITToolkit_Get-ITUserAccount_7c0cc640-a6b2-4648-9c8b-fd50b05887e4 [-Identity] <string[]> [-Server <string>] [<CommonParameters>]",
+      "description": "PesterMock_ITToolkit_Get-ITUserAccount_c8e0a5dc-ffa9-48e7-922f-0ead468ec1fd [-Identity] <string[]> [-Server <string>] [<CommonParameters>]",
       "command": "Get-ITUserAccount",
       "kind": "read",
       "permission": "tools.run",
@@ -295,7 +295,7 @@
     {
       "id": "account-unlock",
       "title": "Unlock account",
-      "description": "PesterMock_ITToolkit_Unlock-ITUser_f4f97380-0d63-411f-86e8-33deace8cd57 [-Identity] <string> [-Server <string>] [-WhatIf] [-Confirm] [<CommonParameters>]",
+      "description": "PesterMock_ITToolkit_Unlock-ITUser_24c54e6c-0691-4da0-a31f-08220909f0cc [-Identity] <string> [-Server <string>] [-WhatIf] [-Confirm] [<CommonParameters>]",
       "command": "Unlock-ITUser",
       "kind": "change",
       "permission": "tools.change",
@@ -315,7 +315,7 @@
     {
       "id": "temp-cleanup",
       "title": "Temp file cleanup",
-      "description": "PesterMock_ITToolkit_Clear-ITTempFile_7d1907e7-3aa5-4614-8ded-d3c8a5fe2f21 [[-ComputerName] <string[]>] [-OlderThanDays <int>] [-Credential <pscredential>] [-Preview] [-WhatIf] [-Confirm] [<CommonParameters>]",
+      "description": "PesterMock_ITToolkit_Clear-ITTempFile_2a4c5e40-ce14-488a-8a95-fc186aa4ae3c [[-ComputerName] <string[]>] [-OlderThanDays <int>] [-Credential <pscredential>] [-Preview] [-WhatIf] [-Confirm] [<CommonParameters>]",
       "command": "Clear-ITTempFile",
       "kind": "change",
       "permission": "tools.change",

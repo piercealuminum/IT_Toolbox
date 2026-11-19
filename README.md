@@ -148,14 +148,18 @@ Setting it up on the ITHub server (once):
    This also puts the endpoint's role into a small `ITToolkitJEA` module (JEA does not look
    inside version folders), and copies the client script to
    `C:\Program Files\ITToolkit\Invoke-ITHubRequest.ps1`.
-5. **Point ITHub at it:** set `TOOLS_RUNNER_PATH` in ITHub's `.env` to that path.
+5. **Point ITHub at it:** add the two lines the installer prints to ITHub's `.env`:
+   `TOOLS_RUNNER_PATH`, and `TOOLS_RUNNER_SHA256` (the client script's checksum, which ITHub
+   checks before every run). Then restart ITHub.
 6. **Optional, for the Entra ID part of user checks:** register an Entra app with the
    Microsoft Graph application permissions `User.Read.All`, `UserAuthenticationMethod.Read.All`
    and `AuditLog.Read.All`. Put its certificate in the server's `Cert:\LocalMachine\My`,
    give the gMSA read access to the private key, and set `GraphTenantId`, `GraphClientId`
    and `GraphCertificateThumbprint` under `ITHub` in `C:\ProgramData\ITToolkit\Settings.psd1`.
 
-After each ITToolkit update, run step 3 and then step 4 again.
+After each ITToolkit update, run step 3 and then step 4 again. Step 4 says whether the
+client script changed. If it did, update `TOOLS_RUNNER_SHA256` in ITHub's `.env` and restart
+ITHub, or ITHub will refuse to run tools.
 
 **Phase 2 tools** (`user-lookup`, `account-unlock`, `temp-cleanup`). The lookup and the
 cleanup need nothing more: the cleanup uses the gMSA's local admin rights on workstations.

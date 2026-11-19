@@ -15,6 +15,9 @@ ITToolkit for all users (Install-ITToolkit.ps1). It:
      the ITHubTools role (Invoke-ITHubTool and Get-ITHubToolCatalog), every call transcribed
   4. registers it as the "<Name>" endpoint (this restarts WinRM, dropping open sessions)
   5. copies Invoke-ITHubRequest.ps1 to C:\Program Files\ITToolkit, the fixed path ITHub runs
+  6. prints the two lines ITHub's .env needs (TOOLS_RUNNER_PATH and TOOLS_RUNNER_SHA256), and
+     says whether the script's checksum changed since the last install, so you know whether
+     ITHub's pin must be updated
 
 Run it again after each ITToolkit update, so the client script copy stays current.
 
@@ -146,6 +149,10 @@ if ($PSCmdlet.ShouldProcess($Name, 'Register the JEA endpoint (restarts WinRM)')
 # 5. The client script, at a path that does not change between versions
 $clientFolder = Join-Path $programFiles 'ITToolkit'
 $clientPath = Join-Path $clientFolder 'Invoke-ITHubRequest.ps1'
+$previousHash = $null
+if (Test-Path -LiteralPath $clientPath) {
+    $previousHash = (Get-FileHash -LiteralPath $clientPath -Algorithm SHA256).Hash.ToLowerInvariant()
+}
 if ($PSCmdlet.ShouldProcess($clientPath, 'Copy the ITHub client script')) {
     New-Item -ItemType Directory -Path $clientFolder -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $module.ModuleBase 'ITHub\Invoke-ITHubRequest.ps1') -Destination $clientPath -Force
@@ -153,6 +160,25 @@ if ($PSCmdlet.ShouldProcess($clientPath, 'Copy the ITHub client script')) {
     Write-Host "Client script: $clientPath"
 }
 
-Write-Host ''
-Write-Host 'Next: set TOOLS_RUNNER_PATH in ITHub''s .env to the client script path above, then test as the ITHub account:'
-Write-Host "  '{""action"":""catalog""}' | powershell.exe -NoProfile -File ""$clientPath"""
+# 6. What ITHub's .env needs. ITHub pins the client script's checksum (TOOLS_RUNNER_SHA256)
+#    and refuses to run a script that does not match, so say whether the pin must change.
+if (Test-Path -LiteralPath $clientPath) {
+    $hash = (Get-FileHash -LiteralPath $clientPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    Write-Host ''
+    Write-Host 'ITHub .env:'
+    Write-Host "  TOOLS_RUNNER_PATH=$clientPath"
+    Write-Host "  TOOLS_RUNNER_SHA256=$hash"
+    Write-Host ''
+    if (-not $previousHash) {
+        Write-Host 'First install: add both lines to ITHub''s .env and restart ITHub.'
+    }
+    elseif ($previousHash -ne $hash) {
+        Write-Warning "The client script changed (its checksum was $previousHash). Update TOOLS_RUNNER_SHA256 in ITHub's .env and restart ITHub, or ITHub will refuse to run tools."
+    }
+    else {
+        Write-Host 'The client script did not change: no need to update TOOLS_RUNNER_SHA256 or restart ITHub.'
+    }
+    Write-Host ''
+    Write-Host 'To test as the ITHub account:'
+    Write-Host "  '{""action"":""catalog""}' | powershell.exe -NoProfile -File ""$clientPath"""
+}

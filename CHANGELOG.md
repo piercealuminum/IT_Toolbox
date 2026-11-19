@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.1
+
+- `Install-ITHubEndpoint.ps1` prints the two lines ITHub's `.env` needs
+  (`TOOLS_RUNNER_PATH` and `TOOLS_RUNNER_SHA256`) and says whether the client script's
+  checksum changed since the last install, so you know when to update ITHub's pin.
+
 ## 1.4.0
 
 - The ITHub catalog has a `resultTypes` section: the default columns for each result type

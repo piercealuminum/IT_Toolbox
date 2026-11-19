@@ -32,7 +32,16 @@ jobs:
         run: |
           Enable-PSRemoting -Force -SkipNetworkProfileCheck | Out-Null
           ./Install-ITToolkit.ps1
-          ./src/ITToolkit/ITHub/Install-ITHubEndpoint.ps1 -ITHubAccount "$env:USERDOMAIN\$env:USERNAME" -RunAsVirtualAccount
+          $out = ./src/ITToolkit/ITHub/Install-ITHubEndpoint.ps1 -ITHubAccount "$env:USERDOMAIN\$env:USERNAME" -RunAsVirtualAccount *>&1 | Out-String
+          Write-Output $out
+          # The installer must print the checksum ITHub pins, matching the installed script.
+          $client = Join-Path $env:ProgramFiles 'ITToolkit\Invoke-ITHubRequest.ps1'
+          $expected = (Get-FileHash -LiteralPath $client -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($out -notmatch "TOOLS_RUNNER_SHA256=$expected") { throw "The installer did not print TOOLS_RUNNER_SHA256=$expected" }
+          if ($out -notmatch 'First install') { throw 'The installer did not report a first install.' }
+          # A second run with the same script must say the pin can stay as it is.
+          $again = ./src/ITToolkit/ITHub/Install-ITHubEndpoint.ps1 -ITHubAccount "$env:USERDOMAIN\$env:USERNAME" -RunAsVirtualAccount *>&1 | Out-String
+          if ($again -notmatch 'did not change') { throw "The second install did not report an unchanged script: $again" }
 
       - name: Run tests (includes running every command against the runner)
         run: ./build/Invoke-Tests.ps1
